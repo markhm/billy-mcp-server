@@ -11,21 +11,21 @@ import { readFileSync } from 'fs';
 // Load environment variables from .env file
 try {
   const envFile = readFileSync('.env', 'utf8');
-  const envVars = envFile.split('\n').filter(line => line.includes('=')).map(line => {
-    const [key, value] = line.split('=');
-    return { key: key.trim(), value: value.trim() };
-  });
-  
-  envVars.forEach(({ key, value }) => {
+  for (const line of envFile.split('\n')) {
+    const separator = line.indexOf('=');
+    if (separator === -1) continue;
+    const key = line.slice(0, separator).trim();
+    // Values may legitimately contain '=' (e.g. base64 padding), so only split once.
+    const value = line.slice(separator + 1).trim();
     if (key && value && !key.startsWith('#')) {
       process.env[key] = value;
     }
-  });
+  }
 } catch (error) {
   // .env file not found, continue with system environment variables
 }
 
-const API_BASE_URL = "https://api.billysbilling.com/v2";
+const API_BASE_URL = process.env.BILLY_API_BASE_URL ?? "https://api.billysbilling.com/v2";
 const ACCESS_TOKEN = process.env.BILLY_ACCESS_TOKEN;
 
 if (!ACCESS_TOKEN) {
@@ -98,8 +98,8 @@ async function testConnection() {
     console.log("");
     console.log("Summary:");
     console.log(`- Organization: ${org.name}`);
-    console.log(`- Base Currency: ${org.baseCurrency?.id || 'N/A'}`);
-    console.log(`- Country: ${org.country?.id || 'N/A'}`);
+    console.log(`- Base Currency: ${org.baseCurrencyId || 'N/A'}`);
+    console.log(`- Country: ${org.countryId || 'N/A'}`);
     console.log(`- Contacts: ${contacts.length} found`);
     console.log(`- Products: ${products.length} found`);
     console.log(`- Invoices: ${invoices.length} found`);

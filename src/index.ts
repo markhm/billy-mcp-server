@@ -1,30 +1,125 @@
 #!/usr/bin/env node
 
-import { Server } from "@modelcontextprotocol/sdk/server/index.js";
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import {
-  CallToolRequestSchema,
-  ListToolsRequestSchema,
-} from "@modelcontextprotocol/sdk/types.js";
-import axios, { AxiosResponse } from "axios";
+/**
+ * Billy MCP Server
+ *
+ * Exposes Billy's accounting API (v2) as MCP tools over stdio.
+ * Docs: https://www.billy.dk/api/
+ */
 
-const API_BASE_URL = "https://api.billysbilling.com/v2";
+import { McpServer, type RegisteredTool } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import axios, { AxiosResponse } from "axios";
+import { z } from "zod";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+
+/**
+ * Load a .env file if one exists, so the token can live in .env rather than being
+ * exported by hand. Real environment variables always take precedence, so an MCP
+ * client's `env` block is never shadowed by a stale .env.
+ *
+ * Looks next to the package (where .env.example lives) and in the working
+ * directory, since MCP clients spawn the server with an arbitrary cwd.
+ */
+function loadDotEnv(): void {
+  if (typeof process.loadEnvFile !== "function") return; // Node < 20.12
+  const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+  for (const candidate of new Set([resolve(packageRoot, ".env"), resolve(process.cwd(), ".env")])) {
+    try {
+      process.loadEnvFile(candidate);
+    } catch {
+      // Absent or unreadable; environment variables remain the primary source.
+    }
+  }
+}
+
+loadDotEnv();
+
+const API_BASE_URL = process.env.BILLY_API_BASE_URL ?? "https://api.billysbilling.com/v2";
+const SERVER_VERSION = "2.0.0";
+
+const TRUTHY = /^(1|true|yes|on)$/i;
+
+/**
+ * Writes are opt-in. Billy has no scoped or read-only access tokens and no read-only
+ * user role, so every token can write and this server is the only place the
+ * restriction can be enforced. It defaults to refusing, and enforces that twice:
+ * mutating tools are not registered at all, and BillyClient refuses any non-GET
+ * request. Set BILLY_ALLOW_WRITES=true to enable the mutating tools.
+ */
+const ALLOW_WRITES = TRUTHY.test(process.env.BILLY_ALLOW_WRITES?.trim() ?? "");
+const READ_ONLY = !ALLOW_WRITES;
+
+// BILLY_READ_ONLY was the opt-in flag before writes became opt-out. Setting it no
+// longer does anything, and `BILLY_READ_ONLY=false` no longer enables writes.
+if (process.env.BILLY_READ_ONLY !== undefined) {
+  console.error(
+    "Warning: BILLY_READ_ONLY is no longer used. Read-only is now the default; " +
+      "set BILLY_ALLOW_WRITES=true to enable the mutating tools."
+  );
+}
 
 interface BillyConfig {
   accessToken: string;
   organizationId?: string;
+  readOnly?: boolean;
+}
+
+/** Hard cap on auto-paginated fetches, so a broad query cannot blow up the response. */
+const MAX_PAGE_SIZE = 1000;
+const MAX_RECORDS = 5000;
+
+/**
+ * Billy's date-range filter. Verified to work on /invoices, /bills and /postings;
+ * it is SILENTLY IGNORED on /daybookTransactions and /salesTaxReturns, which return
+ * the full set instead of erroring, so those are filtered client-side below.
+ */
+function entryDatePeriodParam(fromDate?: string, toDate?: string): Record<string, string> {
+  if (!fromDate && !toDate) return {};
+  return { entryDatePeriod: `dates:${fromDate ?? "1900-01-01"}...${toDate ?? "2999-12-31"}` };
+}
+
+/** Inclusive ISO date-range test. ISO-8601 dates compare correctly as strings. */
+function withinRange(date: unknown, fromDate?: string, toDate?: string): boolean {
+  if (typeof date !== "string") return false;
+  if (fromDate && date < fromDate) return false;
+  if (toDate && date > toDate) return false;
+  return true;
+}
+
+/** Serialise query params, skipping absent values and coercing booleans/numbers. */
+function toQuery(params: Record<string, unknown> = {}): string {
+  const search = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (value === undefined || value === null) continue;
+    search.append(key, String(value));
+  }
+  const queryString = search.toString();
+  return queryString ? `?${queryString}` : "";
 }
 
 class BillyClient {
-  private accessToken: string;
-  private organizationId?: string;
+  private readonly accessToken: string;
+  private readonly organizationId?: string;
+  private readonly readOnly: boolean;
 
   constructor(config: BillyConfig) {
     this.accessToken = config.accessToken;
     this.organizationId = config.organizationId;
+    this.readOnly = config.readOnly ?? false;
   }
 
-  private async request(method: string, endpoint: string, data?: any): Promise<any> {
+  private async request(method: string, endpoint: string, data?: unknown): Promise<any> {
+    // Backstop for read-only mode: catches any future write path that slips past
+    // tool registration.
+    if (this.readOnly && method.toUpperCase() !== "GET") {
+      throw new Error(
+        `Refusing ${method.toUpperCase()} ${endpoint}: this server is read-only. ` +
+          `Set BILLY_ALLOW_WRITES=true to enable write access.`
+      );
+    }
+
     try {
       const response: AxiosResponse = await axios({
         method,
@@ -39,479 +134,811 @@ class BillyClient {
       return response.data;
     } catch (error) {
       if (axios.isAxiosError(error)) {
-        throw new Error(`Billy API Error: ${error.response?.status} - ${error.response?.data || error.message}`);
+        throw new Error(`Billy API Error${error.response ? ` ${error.response.status}` : ""}: ${describeErrorBody(error.response?.data) ?? error.message}`);
       }
       throw error;
     }
   }
 
-  async getOrganization(): Promise<any> {
+  /** Billy tokens are organisation-scoped, so organizationId is normally inferred.
+   *  It is sent explicitly only when BILLY_ORGANIZATION_ID is configured. */
+  private scoped(body: Record<string, unknown>): Record<string, unknown> {
+    return this.organizationId ? { organizationId: this.organizationId, ...body } : body;
+  }
+
+  getOrganization(): Promise<any> {
     return this.request("GET", "/organization");
   }
 
-  async getContacts(params?: any): Promise<any> {
-    const queryString = params ? `?${new URLSearchParams(params).toString()}` : "";
-    return this.request("GET", `/contacts${queryString}`);
+  getContacts(params?: Record<string, unknown>): Promise<any> {
+    return this.request("GET", `/contacts${toQuery(params)}`);
   }
 
-  async getContact(id: string, include?: string): Promise<any> {
-    const queryString = include ? `?include=${include}` : "";
-    return this.request("GET", `/contacts/${id}${queryString}`);
+  getContact(id: string, include?: string): Promise<any> {
+    return this.request("GET", `/contacts/${encodeURIComponent(id)}${toQuery({ include })}`);
   }
 
-  async createContact(contactData: any): Promise<any> {
-    return this.request("POST", "/contacts", { contact: contactData });
+  createContact(contact: Record<string, unknown>): Promise<any> {
+    return this.request("POST", "/contacts", { contact: this.scoped(contact) });
   }
 
-  async updateContact(id: string, contactData: any): Promise<any> {
-    return this.request("PUT", `/contacts/${id}`, { contact: contactData });
+  updateContact(id: string, contact: Record<string, unknown>): Promise<any> {
+    return this.request("PUT", `/contacts/${encodeURIComponent(id)}`, { contact });
   }
 
-  async getInvoices(params?: any): Promise<any> {
-    const queryString = params ? `?${new URLSearchParams(params).toString()}` : "";
-    return this.request("GET", `/invoices${queryString}`);
+  getInvoices(params: Record<string, any> = {}): Promise<any> {
+    const { fromDate, toDate, ...rest } = params;
+    return this.request("GET", `/invoices${toQuery({ ...rest, ...entryDatePeriodParam(fromDate, toDate) })}`);
   }
 
-  async getInvoice(id: string, include?: string): Promise<any> {
-    const queryString = include ? `?include=${include}` : "";
-    return this.request("GET", `/invoices/${id}${queryString}`);
+  getInvoice(id: string, include?: string): Promise<any> {
+    return this.request("GET", `/invoices/${encodeURIComponent(id)}${toQuery({ include })}`);
   }
 
-  async createInvoice(invoiceData: any): Promise<any> {
-    return this.request("POST", "/invoices", { invoice: invoiceData });
+  createInvoice(invoice: Record<string, unknown>): Promise<any> {
+    return this.request("POST", "/invoices", { invoice: this.scoped(invoice) });
   }
 
-  async updateInvoice(id: string, invoiceData: any): Promise<any> {
-    return this.request("PUT", `/invoices/${id}`, { invoice: invoiceData });
+  updateInvoice(id: string, invoice: Record<string, unknown>): Promise<any> {
+    return this.request("PUT", `/invoices/${encodeURIComponent(id)}`, { invoice });
   }
 
-  async getProducts(params?: any): Promise<any> {
-    const queryString = params ? `?${new URLSearchParams(params).toString()}` : "";
-    return this.request("GET", `/products${queryString}`);
+  getProducts(params?: Record<string, unknown>): Promise<any> {
+    return this.request("GET", `/products${toQuery(params)}`);
   }
 
-  async getProduct(id: string, include?: string): Promise<any> {
-    const queryString = include ? `?include=${include}` : "";
-    return this.request("GET", `/products/${id}${queryString}`);
+  getProduct(id: string, include?: string): Promise<any> {
+    return this.request("GET", `/products/${encodeURIComponent(id)}${toQuery({ include })}`);
   }
 
-  async createProduct(productData: any): Promise<any> {
-    return this.request("POST", "/products", { product: productData });
+  createProduct(product: Record<string, unknown>): Promise<any> {
+    return this.request("POST", "/products", { product: this.scoped(product) });
   }
 
-  async getBankPayments(params?: any): Promise<any> {
-    const queryString = params ? `?${new URLSearchParams(params).toString()}` : "";
-    return this.request("GET", `/bankPayments${queryString}`);
+  getBankPayments(params?: Record<string, unknown>): Promise<any> {
+    return this.request("GET", `/bankPayments${toQuery(params)}`);
   }
 
-  async createBankPayment(paymentData: any): Promise<any> {
-    return this.request("POST", "/bankPayments", { bankPayment: paymentData });
+  createBankPayment(bankPayment: Record<string, unknown>): Promise<any> {
+    return this.request("POST", "/bankPayments", { bankPayment: this.scoped(bankPayment) });
   }
 
-  async getBills(params?: any): Promise<any> {
-    const queryString = params ? `?${new URLSearchParams(params).toString()}` : "";
-    return this.request("GET", `/bills${queryString}`);
+  getBills(params: Record<string, any> = {}): Promise<any> {
+    const { fromDate, toDate, ...rest } = params;
+    return this.request("GET", `/bills${toQuery({ ...rest, ...entryDatePeriodParam(fromDate, toDate) })}`);
   }
 
-  async createBill(billData: any): Promise<any> {
-    return this.request("POST", "/bills", { bill: billData });
+  createBill(bill: Record<string, unknown>): Promise<any> {
+    return this.request("POST", "/bills", { bill: this.scoped(bill) });
   }
 
-  async getAccounts(params?: any): Promise<any> {
-    const queryString = params ? `?${new URLSearchParams(params).toString()}` : "";
-    return this.request("GET", `/accounts${queryString}`);
+  getAccounts(params?: Record<string, unknown>): Promise<any> {
+    return this.request("GET", `/accounts${toQuery(params)}`);
+  }
+
+  /**
+   * Fetches every page of a list endpoint, up to MAX_RECORDS. Partial data silently
+   * produces wrong totals, so the result reports exactly what was retrieved and flags
+   * truncation rather than quietly returning a slice.
+   */
+  private async getAllPages(path: string, key: string, params: Record<string, unknown> = {}): Promise<any> {
+    const items: any[] = [];
+    let meta: any = null;
+    let page = 1;
+    let truncated = false;
+
+    for (;;) {
+      const res = await this.request("GET", `${path}${toQuery({ ...params, page, pageSize: MAX_PAGE_SIZE })}`);
+      meta = res.meta;
+      items.push(...(res[key] ?? []));
+
+      const paging = res.meta?.paging;
+      if (!paging?.pageCount || page >= paging.pageCount) break;
+      if (items.length >= MAX_RECORDS) {
+        truncated = true;
+        break;
+      }
+      page += 1;
+    }
+
+    return { meta, [key]: items, retrieved: items.length, truncated };
+  }
+
+  /** VAT returns. Billy ignores date filters here, so the period overlap is applied locally. */
+  async getSalesTaxReturns(params: Record<string, any> = {}): Promise<any> {
+    const { fromDate, toDate } = params;
+    const res = await this.getAllPages("/salesTaxReturns", "salesTaxReturns");
+    const filtered = (res.salesTaxReturns as any[]).filter(
+      (r) => (!toDate || r.startDate <= toDate) && (!fromDate || r.endDate >= fromDate)
+    );
+    return { ...res, salesTaxReturns: filtered, retrieved: filtered.length };
+  }
+
+  getSalesTaxReturn(id: string): Promise<any> {
+    return this.request("GET", `/salesTaxReturns/${encodeURIComponent(id)}`);
+  }
+
+  /**
+   * Ledger postings. entryDatePeriod and accountId are honoured by the API;
+   * taxRateId and salesTaxReturnId are NOT (verified — they return the full set),
+   * so they are applied client-side after the server-side narrowing.
+   */
+  async getPostings(params: Record<string, any> = {}): Promise<any> {
+    const { fromDate, toDate, accountId, taxRateId, salesTaxReturnId } = params;
+    const res = await this.getAllPages("/postings", "postings", {
+      ...entryDatePeriodParam(fromDate, toDate),
+      ...(accountId ? { accountId } : {}),
+    });
+    let postings = res.postings as any[];
+    if (taxRateId) postings = postings.filter((p) => p.taxRateId === taxRateId);
+    if (salesTaxReturnId) postings = postings.filter((p) => p.salesTaxReturnId === salesTaxReturnId);
+    return { ...res, postings, retrieved: postings.length };
+  }
+
+  /** Manual journal entries. Billy ignores date filters here, so it is applied locally. */
+  async getDaybookTransactions(params: Record<string, any> = {}): Promise<any> {
+    const { fromDate, toDate, state } = params;
+    const res = await this.getAllPages("/daybookTransactions", "daybookTransactions");
+    let rows = res.daybookTransactions as any[];
+    if (fromDate || toDate) rows = rows.filter((t) => withinRange(t.entryDate, fromDate, toDate));
+    if (state) rows = rows.filter((t) => t.state === state);
+    return { ...res, daybookTransactions: rows, retrieved: rows.length };
+  }
+
+  async getTaxRates(params: Record<string, any> = {}): Promise<any> {
+    const { appliesToSales, appliesToPurchases, isActive } = params;
+    const res = await this.getAllPages("/taxRates", "taxRates");
+    let rates = res.taxRates as any[];
+    if (appliesToSales !== undefined) rates = rates.filter((r) => r.appliesToSales === appliesToSales);
+    if (appliesToPurchases !== undefined) rates = rates.filter((r) => r.appliesToPurchases === appliesToPurchases);
+    if (isActive !== undefined) rates = rates.filter((r) => r.isActive === isActive);
+    return { ...res, taxRates: rates, retrieved: rates.length };
+  }
+
+  getAccountGroups(): Promise<any> {
+    return this.getAllPages("/accountGroups", "accountGroups");
   }
 }
 
-const server = new Server(
-  {
-    name: "billy-mcp-server",
-    version: "1.0.0",
-  },
-  {
-    capabilities: {
-      tools: {},
-    },
-  }
-);
+/**
+ * Billy errors carry {errorMessage, errorCode}. The API sometimes prefixes the
+ * body with a plain-text line (e.g. "LOGGER ERROR: ..."), which leaves axios
+ * holding an unparsed string, so recover the JSON object embedded in it.
+ */
+function describeErrorBody(body: unknown): string | undefined {
+  if (body === undefined || body === null) return undefined;
 
-// Initialize Billy client
+  if (typeof body === "string") {
+    const embedded = body.slice(body.indexOf("{"));
+    if (embedded) {
+      try {
+        return describeErrorBody(JSON.parse(embedded));
+      } catch {
+        // Not JSON after all; fall through to the raw string.
+      }
+    }
+    return body.trim();
+  }
+
+  if (typeof body === "object") {
+    const { errorMessage, errorCode } = body as { errorMessage?: string; errorCode?: string };
+    if (errorMessage) return errorCode ? `${errorMessage} (${errorCode})` : errorMessage;
+    return JSON.stringify(body);
+  }
+
+  return String(body);
+}
+
 let billyClient: BillyClient | null = null;
 
-function initializeBillyClient(): BillyClient {
-  const accessToken = process.env.BILLY_ACCESS_TOKEN;
-  if (!accessToken) {
-    throw new Error("BILLY_ACCESS_TOKEN environment variable is required");
+function getBillyClient(): BillyClient {
+  if (!billyClient) {
+    const accessToken = process.env.BILLY_ACCESS_TOKEN;
+    if (!accessToken) {
+      throw new Error(
+        "BILLY_ACCESS_TOKEN is not set. Create a token in Billy under Settings -> Access tokens, " +
+          "then put it in your MCP client's env block or in a .env file next to the server."
+      );
+    }
+    billyClient = new BillyClient({
+      accessToken,
+      organizationId: process.env.BILLY_ORGANIZATION_ID,
+      readOnly: READ_ONLY,
+    });
   }
-
-  return new BillyClient({ accessToken });
+  return billyClient;
 }
 
-server.setRequestHandler(ListToolsRequestSchema, async () => {
-  return {
-    tools: [
-      {
-        name: "billy_get_organization",
-        description: "Get organization details from Billy",
-        inputSchema: {
-          type: "object",
-          properties: {},
-        },
-      },
-      {
-        name: "billy_list_contacts",
-        description: "List contacts with optional filtering and pagination",
-        inputSchema: {
-          type: "object",
-          properties: {
-            page: { type: "number", description: "Page number for pagination" },
-            pageSize: { type: "number", description: "Number of items per page (max 1000)" },
-            sortProperty: { type: "string", description: "Property to sort by" },
-            sortDirection: { type: "string", enum: ["ASC", "DESC"], description: "Sort direction" },
-            isCustomer: { type: "boolean", description: "Filter by customer status" },
-            isSupplier: { type: "boolean", description: "Filter by supplier status" },
-          },
-        },
-      },
-      {
-        name: "billy_get_contact",
-        description: "Get a specific contact by ID",
-        inputSchema: {
-          type: "object",
-          properties: {
-            id: { type: "string", description: "Contact ID", required: true },
-            include: { type: "string", description: "Related resources to include (e.g., 'contact.contactPersons')" },
-          },
-          required: ["id"],
-        },
-      },
-      {
-        name: "billy_create_contact",
-        description: "Create a new contact in Billy",
-        inputSchema: {
-          type: "object",
-          properties: {
-            name: { type: "string", description: "Contact name", required: true },
-            type: { type: "string", enum: ["company", "person"], description: "Contact type" },
-            countryId: { type: "string", description: "Country ID (e.g., 'DK', 'US')", required: true },
-            street: { type: "string", description: "Street address" },
-            city: { type: "string", description: "City" },
-            zipcode: { type: "string", description: "Zipcode" },
-            phone: { type: "string", description: "Phone number" },
-            email: { type: "string", description: "Email address" },
-            registrationNo: { type: "string", description: "VAT/CVR/Tax ID number" },
-            isCustomer: { type: "boolean", description: "Whether contact is a customer" },
-            isSupplier: { type: "boolean", description: "Whether contact is a supplier" },
-            paymentTermsDays: { type: "number", description: "Payment terms in days" },
-          },
-          required: ["name", "countryId"],
-        },
-      },
-      {
-        name: "billy_update_contact",
-        description: "Update an existing contact",
-        inputSchema: {
-          type: "object",
-          properties: {
-            id: { type: "string", description: "Contact ID", required: true },
-            name: { type: "string", description: "Contact name" },
-            street: { type: "string", description: "Street address" },
-            city: { type: "string", description: "City" },
-            zipcode: { type: "string", description: "Zipcode" },
-            phone: { type: "string", description: "Phone number" },
-            email: { type: "string", description: "Email address" },
-            registrationNo: { type: "string", description: "VAT/CVR/Tax ID number" },
-            isCustomer: { type: "boolean", description: "Whether contact is a customer" },
-            isSupplier: { type: "boolean", description: "Whether contact is a supplier" },
-            paymentTermsDays: { type: "number", description: "Payment terms in days" },
-          },
-          required: ["id"],
-        },
-      },
-      {
-        name: "billy_list_invoices",
-        description: "List invoices with optional filtering and pagination",
-        inputSchema: {
-          type: "object",
-          properties: {
-            page: { type: "number", description: "Page number for pagination" },
-            pageSize: { type: "number", description: "Number of items per page (max 1000)" },
-            sortProperty: { type: "string", description: "Property to sort by" },
-            sortDirection: { type: "string", enum: ["ASC", "DESC"], description: "Sort direction" },
-            contactId: { type: "string", description: "Filter by contact ID" },
-            state: { type: "string", enum: ["draft", "approved"], description: "Filter by invoice state" },
-            isPaid: { type: "boolean", description: "Filter by payment status" },
-            include: { type: "string", description: "Related resources to include" },
-          },
-        },
-      },
-      {
-        name: "billy_get_invoice",
-        description: "Get a specific invoice by ID",
-        inputSchema: {
-          type: "object",
-          properties: {
-            id: { type: "string", description: "Invoice ID", required: true },
-            include: { type: "string", description: "Related resources to include (e.g., 'invoice.lines,invoice.contact')" },
-          },
-          required: ["id"],
-        },
-      },
-      {
-        name: "billy_create_invoice",
-        description: "Create a new invoice in Billy",
-        inputSchema: {
-          type: "object",
-          properties: {
-            contactId: { type: "string", description: "Contact ID", required: true },
-            entryDate: { type: "string", description: "Invoice date (YYYY-MM-DD)", required: true },
-            currencyId: { type: "string", description: "Currency ID (e.g., 'DKK', 'USD')", required: true },
-            invoiceNo: { type: "string", description: "Invoice number (optional, auto-generated if not provided)" },
-            paymentTermsDays: { type: "number", description: "Payment terms in days" },
-            contactMessage: { type: "string", description: "Message to display on invoice" },
-            lines: {
-              type: "array",
-              description: "Invoice lines",
-              items: {
-                type: "object",
-                properties: {
-                  productId: { type: "string", description: "Product ID", required: true },
-                  description: { type: "string", description: "Line description" },
-                  quantity: { type: "number", description: "Quantity", default: 1 },
-                  unitPrice: { type: "number", description: "Unit price", required: true },
-                },
-                required: ["productId", "unitPrice"],
-              },
-              required: true,
-            },
-            state: { type: "string", enum: ["draft", "approved"], description: "Invoice state" },
-          },
-          required: ["contactId", "entryDate", "currencyId", "lines"],
-        },
-      },
-      {
-        name: "billy_list_products",
-        description: "List products with optional filtering and pagination",
-        inputSchema: {
-          type: "object",
-          properties: {
-            page: { type: "number", description: "Page number for pagination" },
-            pageSize: { type: "number", description: "Number of items per page (max 1000)" },
-            sortProperty: { type: "string", description: "Property to sort by" },
-            sortDirection: { type: "string", enum: ["ASC", "DESC"], description: "Sort direction" },
-            isArchived: { type: "boolean", description: "Filter by archived status" },
-            include: { type: "string", description: "Related resources to include" },
-          },
-        },
-      },
-      {
-        name: "billy_get_product",
-        description: "Get a specific product by ID",
-        inputSchema: {
-          type: "object",
-          properties: {
-            id: { type: "string", description: "Product ID", required: true },
-            include: { type: "string", description: "Related resources to include (e.g., 'product.prices')" },
-          },
-          required: ["id"],
-        },
-      },
-      {
-        name: "billy_create_product",
-        description: "Create a new product in Billy",
-        inputSchema: {
-          type: "object",
-          properties: {
-            name: { type: "string", description: "Product name", required: true },
-            description: { type: "string", description: "Product description" },
-            productNo: { type: "string", description: "Product number/SKU" },
-            accountId: { type: "string", description: "Revenue account ID" },
-            salesTaxRulesetId: { type: "string", description: "Sales tax ruleset ID" },
-            prices: {
-              type: "array",
-              description: "Product prices for different currencies",
-              items: {
-                type: "object",
-                properties: {
-                  unitPrice: { type: "number", description: "Unit price", required: true },
-                  currencyId: { type: "string", description: "Currency ID", required: true },
-                },
-                required: ["unitPrice", "currencyId"],
-              },
-            },
-          },
-          required: ["name"],
-        },
-      },
-      {
-        name: "billy_list_bank_payments",
-        description: "List bank payments with optional filtering and pagination",
-        inputSchema: {
-          type: "object",
-          properties: {
-            page: { type: "number", description: "Page number for pagination" },
-            pageSize: { type: "number", description: "Number of items per page (max 1000)" },
-            sortProperty: { type: "string", description: "Property to sort by" },
-            sortDirection: { type: "string", enum: ["ASC", "DESC"], description: "Sort direction" },
-            contactId: { type: "string", description: "Filter by contact ID" },
-            isVoided: { type: "boolean", description: "Filter by voided status" },
-          },
-        },
-      },
-      {
-        name: "billy_create_payment",
-        description: "Create a payment to mark invoices as paid",
-        inputSchema: {
-          type: "object",
-          properties: {
-            entryDate: { type: "string", description: "Payment date (YYYY-MM-DD)", required: true },
-            cashAmount: { type: "number", description: "Payment amount", required: true },
-            cashSide: { type: "string", enum: ["debit", "credit"], description: "debit for invoice payments, credit for bill payments", required: true },
-            cashAccountId: { type: "string", description: "Bank account ID where money was deposited/withdrawn", required: true },
-            associations: {
-              type: "array",
-              description: "Invoice/bill references to pay",
-              items: {
-                type: "object",
-                properties: {
-                  subjectReference: { type: "string", description: "Reference like 'invoice:invoiceId' or 'bill:billId'", required: true },
-                },
-                required: ["subjectReference"],
-              },
-              required: true,
-            },
-            feeAmount: { type: "number", description: "Bank/payment fee amount" },
-            feeAccountId: { type: "string", description: "Expense account ID for fees" },
-          },
-          required: ["entryDate", "cashAmount", "cashSide", "cashAccountId", "associations"],
-        },
-      },
-      {
-        name: "billy_list_bills",
-        description: "List bills (vendor invoices) with optional filtering and pagination",
-        inputSchema: {
-          type: "object",
-          properties: {
-            page: { type: "number", description: "Page number for pagination" },
-            pageSize: { type: "number", description: "Number of items per page (max 1000)" },
-            sortProperty: { type: "string", description: "Property to sort by" },
-            sortDirection: { type: "string", enum: ["ASC", "DESC"], description: "Sort direction" },
-            contactId: { type: "string", description: "Filter by contact ID" },
-            state: { type: "string", enum: ["draft", "approved"], description: "Filter by bill state" },
-            isPaid: { type: "boolean", description: "Filter by payment status" },
-          },
-        },
-      },
-      {
-        name: "billy_list_accounts",
-        description: "List chart of accounts",
-        inputSchema: {
-          type: "object",
-          properties: {
-            page: { type: "number", description: "Page number for pagination" },
-            pageSize: { type: "number", description: "Number of items per page (max 1000)" },
-            sortProperty: { type: "string", description: "Property to sort by" },
-            sortDirection: { type: "string", enum: ["ASC", "DESC"], description: "Sort direction" },
-            isArchived: { type: "boolean", description: "Filter by archived status" },
-            systemRole: { type: "string", description: "Filter by system role" },
-          },
-        },
-      },
-    ],
-  };
+// --- Shared schema fragments -------------------------------------------------
+
+const listParams = {
+  page: z.number().int().min(0).optional().describe("Page number for pagination"),
+  pageSize: z.number().int().min(1).max(1000).optional().describe("Number of items per page (max 1000)"),
+  sortProperty: z.string().optional().describe("Property to sort by"),
+  sortDirection: z.enum(["ASC", "DESC"]).optional().describe("Sort direction"),
+};
+
+const includeParam = z.string().optional();
+
+/** Date-range filter on entryDate (bogføringsdato). Format is validated so a malformed
+ *  date fails here rather than silently widening the period. */
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+const dateRangeParams = {
+  fromDate: z
+    .string()
+    .regex(ISO_DATE, "must be YYYY-MM-DD")
+    .optional()
+    .describe("Start of the entryDate range, inclusive (YYYY-MM-DD)"),
+  toDate: z
+    .string()
+    .regex(ISO_DATE, "must be YYYY-MM-DD")
+    .optional()
+    .describe("End of the entryDate range, inclusive (YYYY-MM-DD)"),
+};
+
+/** Extra keys the auto-paginating tools return so callers can trust completeness. */
+const completeness = {
+  retrieved: z.number().optional().describe("Number of records actually returned after filtering"),
+  truncated: z
+    .boolean()
+    .optional()
+    .describe("True if the record cap was hit and results are incomplete — narrow the filters"),
+};
+
+/** Billy entities vary by organisation configuration, so entity bodies stay open.
+ *  Every key is optional: the schema documents the envelope without risking a
+ *  validation failure on a response shape we have not pinned down. */
+const billyEntity = z.looseObject({});
+
+/** Billy's response metadata. Verified against the live API; `paging` is present
+ *  on list endpoints only. Stays open to unknown keys. */
+const billyMeta = z.looseObject({
+  statusCode: z.number().optional(),
+  success: z.boolean().optional(),
+  paging: z
+    .looseObject({
+      page: z.number().optional(),
+      pageSize: z.number().optional(),
+      pageCount: z.number().optional().describe("Total number of pages"),
+      total: z.number().optional().describe("Total number of matching records"),
+      nextUrl: z.string().optional(),
+      lastUrl: z.string().optional(),
+    })
+    .optional()
+    .describe("Pagination info; use `total`/`pageCount` to decide whether to page further"),
 });
 
-server.setRequestHandler(CallToolRequestSchema, async (request) => {
+/**
+ * Envelope returned by Billy list/read endpoints: {meta, <resourceKey>}.
+ *
+ * `include` causes Billy to return the related records as extra sibling keys
+ * (e.g. include=invoice.lines adds `invoiceLines`), so those are declared too.
+ */
+function billyEnvelope(resourceKey: string, kind: "list" | "single", sideloads: string[] = []) {
+  return {
+    meta: billyMeta.optional().describe("Billy response metadata (status, paging)"),
+    [resourceKey]: (kind === "list" ? z.array(billyEntity) : billyEntity)
+      .optional()
+      .describe(`The ${resourceKey} returned by Billy`),
+    ...Object.fromEntries(
+      sideloads.map((key) => [
+        key,
+        z.array(billyEntity).optional().describe(`Related ${key}, present when requested via \`include\``),
+      ])
+    ),
+  };
+}
+
+const readOnly = { readOnlyHint: true, destructiveHint: false, openWorldHint: true } as const;
+const creates = { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true } as const;
+const updates = { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: true } as const;
+
+type ToolResult = {
+  content: { type: "text"; text: string }[];
+  structuredContent?: Record<string, unknown>;
+  isError?: boolean;
+};
+
+/** Runs a Billy call, returning the payload as both text and structured content. */
+async function call(fn: (client: BillyClient) => Promise<any>): Promise<ToolResult> {
   try {
-    if (!billyClient) {
-      billyClient = initializeBillyClient();
-    }
-
-    const { name, arguments: args } = request.params;
-    const safeArgs = args || {};
-
-    switch (name) {
-      case "billy_get_organization":
-        const org = await billyClient.getOrganization();
-        return { content: [{ type: "text", text: JSON.stringify(org, null, 2) }] };
-
-      case "billy_list_contacts":
-        const contacts = await billyClient.getContacts(safeArgs);
-        return { content: [{ type: "text", text: JSON.stringify(contacts, null, 2) }] };
-
-      case "billy_get_contact":
-        const contact = await billyClient.getContact((safeArgs as any).id, (safeArgs as any).include);
-        return { content: [{ type: "text", text: JSON.stringify(contact, null, 2) }] };
-
-      case "billy_create_contact":
-        const newContact = await billyClient.createContact(safeArgs);
-        return { content: [{ type: "text", text: JSON.stringify(newContact, null, 2) }] };
-
-      case "billy_update_contact":
-        const { id, ...updateData } = safeArgs as any;
-        const updatedContact = await billyClient.updateContact(id, updateData);
-        return { content: [{ type: "text", text: JSON.stringify(updatedContact, null, 2) }] };
-
-      case "billy_list_invoices":
-        const invoices = await billyClient.getInvoices(safeArgs);
-        return { content: [{ type: "text", text: JSON.stringify(invoices, null, 2) }] };
-
-      case "billy_get_invoice":
-        const invoice = await billyClient.getInvoice((safeArgs as any).id, (safeArgs as any).include);
-        return { content: [{ type: "text", text: JSON.stringify(invoice, null, 2) }] };
-
-      case "billy_create_invoice":
-        const newInvoice = await billyClient.createInvoice(safeArgs);
-        return { content: [{ type: "text", text: JSON.stringify(newInvoice, null, 2) }] };
-
-      case "billy_list_products":
-        const products = await billyClient.getProducts(safeArgs);
-        return { content: [{ type: "text", text: JSON.stringify(products, null, 2) }] };
-
-      case "billy_get_product":
-        const product = await billyClient.getProduct((safeArgs as any).id, (safeArgs as any).include);
-        return { content: [{ type: "text", text: JSON.stringify(product, null, 2) }] };
-
-      case "billy_create_product":
-        const newProduct = await billyClient.createProduct(safeArgs);
-        return { content: [{ type: "text", text: JSON.stringify(newProduct, null, 2) }] };
-
-      case "billy_list_bank_payments":
-        const payments = await billyClient.getBankPayments(safeArgs);
-        return { content: [{ type: "text", text: JSON.stringify(payments, null, 2) }] };
-
-      case "billy_create_payment":
-        const newPayment = await billyClient.createBankPayment(safeArgs);
-        return { content: [{ type: "text", text: JSON.stringify(newPayment, null, 2) }] };
-
-      case "billy_list_bills":
-        const bills = await billyClient.getBills(safeArgs);
-        return { content: [{ type: "text", text: JSON.stringify(bills, null, 2) }] };
-
-      case "billy_list_accounts":
-        const accounts = await billyClient.getAccounts(safeArgs);
-        return { content: [{ type: "text", text: JSON.stringify(accounts, null, 2) }] };
-
-      default:
-        throw new Error(`Unknown tool: ${name}`);
-    }
+    const data = await fn(getBillyClient());
+    return {
+      content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
+      structuredContent: (data ?? {}) as Record<string, unknown>,
+    };
   } catch (error) {
     return {
       content: [{ type: "text", text: `Error: ${error instanceof Error ? error.message : String(error)}` }],
       isError: true,
     };
   }
+}
+
+const server = new McpServer({ name: "billy-mcp-server", version: SERVER_VERSION });
+
+/** Mutating tools, tracked so they can be unregistered unless writes are enabled. */
+const writeTools: RegisteredTool[] = [];
+
+// --- Organization ------------------------------------------------------------
+
+server.registerTool(
+  "billy_get_organization",
+  {
+    title: "Get organization",
+    description: "Get organization details from Billy",
+    inputSchema: {},
+    outputSchema: billyEnvelope("organization", "single"),
+    annotations: readOnly,
+  },
+  () => call((billy) => billy.getOrganization())
+);
+
+// --- Contacts ----------------------------------------------------------------
+
+server.registerTool(
+  "billy_list_contacts",
+  {
+    title: "List contacts",
+    description: "List contacts with optional filtering and pagination",
+    inputSchema: {
+      ...listParams,
+      isCustomer: z.boolean().optional().describe("Filter by customer status"),
+      isSupplier: z.boolean().optional().describe("Filter by supplier status"),
+      include: includeParam.describe("Related resources to include"),
+    },
+    outputSchema: billyEnvelope("contacts", "list"),
+    annotations: readOnly,
+  },
+  (args) => call((billy) => billy.getContacts(args))
+);
+
+server.registerTool(
+  "billy_get_contact",
+  {
+    title: "Get contact",
+    description: "Get a specific contact by ID",
+    inputSchema: {
+      id: z.string().describe("Contact ID"),
+      include: includeParam.describe("Related resources to include (e.g. 'contact.contactPersons')"),
+    },
+    outputSchema: billyEnvelope("contact", "single", ["contactPersons"]),
+    annotations: readOnly,
+  },
+  ({ id, include }) => call((billy) => billy.getContact(id, include))
+);
+
+const contactFields = {
+  name: z.string().optional().describe("Contact name"),
+  street: z.string().optional().describe("Street address"),
+  city: z.string().optional().describe("City"),
+  zipcode: z.string().optional().describe("Zipcode"),
+  countryId: z.string().optional().describe("Country ID (e.g. 'DK', 'US')"),
+  phone: z.string().optional().describe("Phone number"),
+  email: z.string().optional().describe("Email address"),
+  registrationNo: z.string().optional().describe("VAT/CVR/Tax ID number"),
+  isCustomer: z.boolean().optional().describe("Whether contact is a customer"),
+  isSupplier: z.boolean().optional().describe("Whether contact is a supplier"),
+  paymentTermsDays: z.number().int().min(0).optional().describe("Payment terms in days"),
+};
+
+writeTools.push(
+  server.registerTool(
+    "billy_create_contact",
+    {
+      title: "Create contact",
+      description: "Create a new contact in Billy",
+      inputSchema: {
+        ...contactFields,
+        name: z.string().describe("Contact name"),
+        countryId: z.string().describe("Country ID (e.g. 'DK', 'US')"),
+        type: z.enum(["company", "person"]).optional().describe("Contact type"),
+      },
+      outputSchema: billyEnvelope("contacts", "list"),
+      annotations: creates,
+    },
+    (args) => call((billy) => billy.createContact(args))
+  )
+);
+
+writeTools.push(
+  server.registerTool(
+    "billy_update_contact",
+    {
+      title: "Update contact",
+      description: "Update an existing contact. Only the supplied fields are changed.",
+      inputSchema: { ...contactFields, id: z.string().describe("Contact ID") },
+      outputSchema: billyEnvelope("contacts", "list"),
+      annotations: updates,
+    },
+    ({ id, ...contact }) => call((billy) => billy.updateContact(id, contact))
+  )
+);
+
+// --- Invoices ----------------------------------------------------------------
+
+server.registerTool(
+  "billy_list_invoices",
+  {
+    title: "List invoices",
+    description: "List invoices with optional filtering and pagination",
+    inputSchema: {
+      ...listParams,
+      ...dateRangeParams,
+      contactId: z.string().optional().describe("Filter by contact ID"),
+      state: z.enum(["draft", "approved"]).optional().describe("Filter by invoice state"),
+      isPaid: z.boolean().optional().describe("Filter by payment status"),
+      include: includeParam.describe("Related resources to include"),
+    },
+    outputSchema: billyEnvelope("invoices", "list"),
+    annotations: readOnly,
+  },
+  (args) => call((billy) => billy.getInvoices(args))
+);
+
+server.registerTool(
+  "billy_get_invoice",
+  {
+    title: "Get invoice",
+    description: "Get a specific invoice by ID",
+    inputSchema: {
+      id: z.string().describe("Invoice ID"),
+      include: includeParam.describe("Related resources to include (e.g. 'invoice.lines,invoice.contact')"),
+    },
+    outputSchema: billyEnvelope("invoice", "single", ["invoiceLines"]),
+    annotations: readOnly,
+  },
+  ({ id, include }) => call((billy) => billy.getInvoice(id, include))
+);
+
+const invoiceLine = z.object({
+  productId: z.string().describe("Product ID"),
+  description: z.string().optional().describe("Line description"),
+  quantity: z.number().default(1).describe("Quantity"),
+  unitPrice: z.number().describe("Unit price"),
 });
+
+const invoiceFields = {
+  contactId: z.string().optional().describe("Contact ID"),
+  entryDate: z.string().optional().describe("Invoice date (YYYY-MM-DD)"),
+  currencyId: z.string().optional().describe("Currency ID (e.g. 'DKK', 'USD')"),
+  invoiceNo: z.string().optional().describe("Invoice number (auto-generated by Billy if omitted)"),
+  paymentTermsDays: z.number().int().min(0).optional().describe("Payment terms in days (inherited from the contact if omitted)"),
+  contactMessage: z.string().optional().describe("Message to display on invoice"),
+  state: z.enum(["draft", "approved"]).optional().describe("Invoice state"),
+  lines: z.array(invoiceLine).optional().describe("Invoice lines"),
+};
+
+writeTools.push(
+  server.registerTool(
+    "billy_create_invoice",
+    {
+      title: "Create invoice",
+      description: "Create a new invoice in Billy",
+      inputSchema: {
+        ...invoiceFields,
+        contactId: z.string().describe("Contact ID"),
+        entryDate: z.string().describe("Invoice date (YYYY-MM-DD)"),
+        currencyId: z.string().describe("Currency ID (e.g. 'DKK', 'USD')"),
+        lines: z.array(invoiceLine).min(1).describe("Invoice lines (at least one)"),
+      },
+      outputSchema: billyEnvelope("invoices", "list"),
+      annotations: creates,
+    },
+    (args) => call((billy) => billy.createInvoice(args))
+  )
+);
+
+writeTools.push(
+  server.registerTool(
+    "billy_update_invoice",
+    {
+      title: "Update invoice",
+      description: "Update an existing invoice. Only the supplied fields are changed. Approved invoices are generally immutable in Billy.",
+      inputSchema: { ...invoiceFields, id: z.string().describe("Invoice ID") },
+      outputSchema: billyEnvelope("invoices", "list"),
+      annotations: updates,
+    },
+    ({ id, ...invoice }) => call((billy) => billy.updateInvoice(id, invoice))
+  )
+);
+
+// --- Products ----------------------------------------------------------------
+
+server.registerTool(
+  "billy_list_products",
+  {
+    title: "List products",
+    description: "List products with optional filtering and pagination",
+    inputSchema: {
+      ...listParams,
+      isArchived: z.boolean().optional().describe("Filter by archived status"),
+      include: includeParam.describe("Related resources to include"),
+    },
+    outputSchema: billyEnvelope("products", "list"),
+    annotations: readOnly,
+  },
+  (args) => call((billy) => billy.getProducts(args))
+);
+
+server.registerTool(
+  "billy_get_product",
+  {
+    title: "Get product",
+    description: "Get a specific product by ID",
+    inputSchema: {
+      id: z.string().describe("Product ID"),
+      include: includeParam.describe("Related resources to include (e.g. 'product.prices')"),
+    },
+    outputSchema: billyEnvelope("product", "single", ["productPrices"]),
+    annotations: readOnly,
+  },
+  ({ id, include }) => call((billy) => billy.getProduct(id, include))
+);
+
+writeTools.push(
+  server.registerTool(
+    "billy_create_product",
+    {
+      title: "Create product",
+      description: "Create a new product in Billy",
+      inputSchema: {
+        name: z.string().describe("Product name"),
+        description: z.string().optional().describe("Product description"),
+        productNo: z.string().optional().describe("Product number/SKU"),
+        accountId: z.string().optional().describe("Revenue account ID"),
+        salesTaxRulesetId: z.string().optional().describe("Sales tax ruleset ID"),
+        prices: z
+          .array(
+            z.object({
+              unitPrice: z.number().describe("Unit price"),
+              currencyId: z.string().describe("Currency ID"),
+            })
+          )
+          .optional()
+          .describe("Product prices for different currencies"),
+      },
+      outputSchema: billyEnvelope("products", "list"),
+      annotations: creates,
+    },
+    (args) => call((billy) => billy.createProduct(args))
+  )
+);
+
+// --- Payments ----------------------------------------------------------------
+
+server.registerTool(
+  "billy_list_bank_payments",
+  {
+    title: "List bank payments",
+    description: "List bank payments with optional filtering and pagination",
+    inputSchema: {
+      ...listParams,
+      contactId: z.string().optional().describe("Filter by contact ID"),
+      isVoided: z.boolean().optional().describe("Filter by voided status"),
+    },
+    outputSchema: billyEnvelope("bankPayments", "list"),
+    annotations: readOnly,
+  },
+  (args) => call((billy) => billy.getBankPayments(args))
+);
+
+writeTools.push(
+  server.registerTool(
+    "billy_create_payment",
+    {
+      title: "Create payment",
+      description: "Create a payment to mark invoices or bills as paid",
+      inputSchema: {
+        entryDate: z.string().describe("Payment date (YYYY-MM-DD)"),
+        cashAmount: z.number().describe("Payment amount"),
+        cashSide: z.enum(["debit", "credit"]).describe("debit for invoice payments, credit for bill payments"),
+        cashAccountId: z.string().describe("Bank account ID where money was deposited/withdrawn"),
+        associations: z
+          .array(
+            z.object({
+              subjectReference: z.string().describe("Reference like 'invoice:invoiceId' or 'bill:billId'"),
+            })
+          )
+          .min(1)
+          .describe("Invoice/bill references to pay"),
+        feeAmount: z.number().optional().describe("Bank/payment fee amount"),
+        feeAccountId: z.string().optional().describe("Expense account ID for fees"),
+      },
+      outputSchema: billyEnvelope("bankPayments", "list"),
+      annotations: creates,
+    },
+    (args) => call((billy) => billy.createBankPayment(args))
+  )
+);
+
+// --- Bills -------------------------------------------------------------------
+
+server.registerTool(
+  "billy_list_bills",
+  {
+    title: "List bills",
+    description: "List bills (vendor invoices) with optional filtering and pagination",
+    inputSchema: {
+      ...listParams,
+      ...dateRangeParams,
+      contactId: z.string().optional().describe("Filter by contact ID"),
+      state: z.enum(["draft", "approved"]).optional().describe("Filter by bill state"),
+      isPaid: z.boolean().optional().describe("Filter by payment status"),
+      include: includeParam.describe("Related resources to include"),
+    },
+    outputSchema: billyEnvelope("bills", "list"),
+    annotations: readOnly,
+  },
+  (args) => call((billy) => billy.getBills(args))
+);
+
+writeTools.push(
+  server.registerTool(
+    "billy_create_bill",
+    {
+      title: "Create bill",
+      description:
+        "Create a bill (vendor invoice) in Billy. Line fields follow Billy's bill resource; unknown line fields are passed through unchanged.",
+      inputSchema: {
+        contactId: z.string().describe("Supplier contact ID"),
+        entryDate: z.string().describe("Bill date (YYYY-MM-DD)"),
+        currencyId: z.string().describe("Currency ID (e.g. 'DKK', 'USD')"),
+        paymentTermsDays: z.number().int().min(0).optional().describe("Payment terms in days"),
+        suppliersInvoiceNo: z.string().optional().describe("The supplier's own invoice number"),
+        state: z.enum(["draft", "approved"]).optional().describe("Bill state"),
+        lines: z
+          .array(
+            z.looseObject({
+              accountId: z.string().optional().describe("Expense account ID"),
+              description: z.string().optional().describe("Line description"),
+              amount: z.number().optional().describe("Line amount"),
+              quantity: z.number().optional().describe("Quantity"),
+              taxRateId: z.string().optional().describe("Tax rate ID"),
+            })
+          )
+          .min(1)
+          .describe("Bill lines (at least one)"),
+      },
+      outputSchema: billyEnvelope("bills", "list"),
+      annotations: creates,
+    },
+    (args) => call((billy) => billy.createBill(args))
+  )
+);
+
+// --- Accounts ----------------------------------------------------------------
+
+server.registerTool(
+  "billy_list_accounts",
+  {
+    title: "List accounts",
+    description: "List the chart of accounts",
+    inputSchema: {
+      ...listParams,
+      isArchived: z.boolean().optional().describe("Filter by archived status"),
+      systemRole: z.string().optional().describe("Filter by system role"),
+    },
+    outputSchema: billyEnvelope("accounts", "list"),
+    annotations: readOnly,
+  },
+  (args) => call((billy) => billy.getAccounts(args))
+);
+
+// --- VAT and ledger ----------------------------------------------------------
+
+server.registerTool(
+  "billy_list_sales_tax_returns",
+  {
+    title: "List VAT returns",
+    description:
+      "List Billy's own VAT returns (momsangivelser) — the authoritative figures for a period. " +
+      "Each has periodType (quarter/halfYear/year), startDate, endDate, reportDeadline, isSettled and isPaid. " +
+      "Use this as the baseline before recomputing anything. Returns every return, filtered by period overlap.",
+    inputSchema: dateRangeParams,
+    outputSchema: { ...billyEnvelope("salesTaxReturns", "list"), ...completeness },
+    annotations: readOnly,
+  },
+  (args) => call((billy) => billy.getSalesTaxReturns(args))
+);
+
+server.registerTool(
+  "billy_get_sales_tax_return",
+  {
+    title: "Get VAT return",
+    description: "Get a single VAT return (momsangivelse) by ID",
+    inputSchema: { id: z.string().describe("Sales tax return ID") },
+    outputSchema: billyEnvelope("salesTaxReturn", "single"),
+    annotations: readOnly,
+  },
+  ({ id }) => call((billy) => billy.getSalesTaxReturn(id))
+);
+
+server.registerTool(
+  "billy_list_postings",
+  {
+    title: "List ledger postings",
+    description:
+      "List ledger postings — the double-entry lines where VAT actually lands. Each posting has " +
+      "entryDate, accountId, amount, side (debit/credit), taxRateId and salesTaxReturnId. " +
+      "This is the ground truth for VAT figures, ahead of invoice or bill totals. " +
+      "All matching pages are fetched; check `truncated` before trusting a total.",
+    inputSchema: {
+      ...dateRangeParams,
+      accountId: z.string().optional().describe("Filter by account ID"),
+      taxRateId: z.string().optional().describe("Filter by tax rate ID"),
+      salesTaxReturnId: z.string().optional().describe("Filter by the VAT return the posting belongs to"),
+    },
+    outputSchema: { ...billyEnvelope("postings", "list"), ...completeness },
+    annotations: readOnly,
+  },
+  (args) => call((billy) => billy.getPostings(args))
+);
+
+server.registerTool(
+  "billy_list_daybook_transactions",
+  {
+    title: "List daybook transactions",
+    description:
+      "List manual journal entries (kassekladde). These bypass the normal invoice/bill flow, so they " +
+      "warrant individual scrutiny in a VAT audit. All pages are fetched and filtered by entryDate.",
+    inputSchema: {
+      ...dateRangeParams,
+      state: z.enum(["draft", "approved", "voided"]).optional().describe("Filter by transaction state"),
+    },
+    outputSchema: { ...billyEnvelope("daybookTransactions", "list"), ...completeness },
+    annotations: readOnly,
+  },
+  (args) => call((billy) => billy.getDaybookTransactions(args))
+);
+
+server.registerTool(
+  "billy_list_tax_rates",
+  {
+    title: "List tax rates",
+    description:
+      "List the configured VAT/tax rates, including rate, name, abbreviation and predefinedTag " +
+      "(e.g. 's_dk_non_eu_goods'), plus whether each applies to sales or purchases. " +
+      "Use this to interpret the taxRateId on postings and invoice lines.",
+    inputSchema: {
+      appliesToSales: z.boolean().optional().describe("Only rates usable on sales"),
+      appliesToPurchases: z.boolean().optional().describe("Only rates usable on purchases"),
+      isActive: z.boolean().optional().describe("Filter by active status"),
+    },
+    outputSchema: { ...billyEnvelope("taxRates", "list"), ...completeness },
+    annotations: readOnly,
+  },
+  (args) => call((billy) => billy.getTaxRates(args))
+);
+
+server.registerTool(
+  "billy_list_account_groups",
+  {
+    title: "List account groups",
+    description: "List chart-of-accounts groups (accountNo, name, type, natureId) for classifying accounts",
+    inputSchema: {},
+    outputSchema: { ...billyEnvelope("accountGroups", "list"), ...completeness },
+    annotations: readOnly,
+  },
+  () => call((billy) => billy.getAccountGroups())
+);
+
+if (READ_ONLY) {
+  for (const tool of writeTools) tool.remove();
+}
 
 async function main() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error("Billy MCP Server running on stdio");
+  console.error(
+    `Billy MCP Server ${SERVER_VERSION} running on stdio ` +
+      (READ_ONLY
+        ? `(read-only: ${writeTools.length} write tools disabled)`
+        : `(BILLY_ALLOW_WRITES is set: ${writeTools.length} write tools enabled)`)
+  );
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
-  main().catch((error) => {
-    console.error("Server error:", error);
-    process.exit(1);
-  });
-}
+main().catch((error) => {
+  console.error("Server error:", error);
+  process.exit(1);
+});
