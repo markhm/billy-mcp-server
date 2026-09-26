@@ -27,3 +27,7 @@ pids
 # OS generated files
 .DS_Store
 Thumbs.db
+
+# Fiberplane local issue tracking
+.fp/*
+!.fp/remote.toml

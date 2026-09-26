@@ -125,3 +125,5 @@ tsconfig.json          # TypeScript configuration
 - Tokens are permanent, unscoped and full-access; there is no read-only token.
 - Billy has been acquired and is being rebranded to Shine Regnskab. The v2 API is
   unchanged and live, but watch for deprecation notices.
+
+@FP_CLAUDE.md
