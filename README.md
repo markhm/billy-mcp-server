@@ -74,7 +74,7 @@ export BILLY_ACCESS_TOKEN="your_billy_access_token_here"
 | --- | --- | --- |
 | `BILLY_ACCESS_TOKEN` | yes | Billy API access token |
 | `BILLY_ORGANIZATION_ID` | no | Sent as `organizationId` on create calls. Billy tokens are organisation-scoped, so this is normally inferred — set it only if the API rejects a create for a missing organization. |
-| `BILLY_ALLOW_WRITES` | no | Set to `true` to enable the 7 mutating tools. **Off by default** — see below. |
+| `BILLY_ALLOW_WRITES` | no | Set to `true` to enable the 9 mutating tools. **Off by default** — see below. Even then every write dry-runs unless called with `dryRun: false`. |
 | `BILLY_API_BASE_URL` | no | Overrides the API base URL (defaults to `https://api.billysbilling.com/v2`). |
 
 ### MCP Client Configuration
@@ -142,6 +142,8 @@ Add the server to your MCP client configuration. For Claude Desktop, add this to
 - `billy_get_sales_tax_return` - Get a single VAT return by ID
 - `billy_list_postings` - Ledger postings, where VAT actually lands
 - `billy_list_daybook_transactions` - Manual journal entries (kassekladde)
+- `billy_create_daybook_transaction` - Create a journal entry (draft by default); accounts by number, must balance
+- `billy_delete_daybook_transaction` - Delete a **draft** journal entry (approved entries are refused)
 - `billy_list_tax_rates` - Configured VAT/tax rates
 
 ### Date filtering
@@ -173,8 +175,9 @@ Billy's user roles do not help either: the closest thing to a read-only role (`U
 blocks writes but also blocks reading accounting data, which defeats the purpose. So the
 restriction has to be enforced here, and it defaults to on.
 
-Out of the box the client sees **10 read tools**. The 7 mutating tools
-(`billy_create_*`, `billy_update_*`) are absent. To enable them:
+Out of the box the client sees **16 read tools**. The 9 mutating tools
+(`billy_create_*`, `billy_update_*`, `billy_delete_daybook_transaction`) are absent.
+To enable them:
 
 ```bash
 BILLY_ALLOW_WRITES=true
@@ -194,6 +197,25 @@ Note that `readOnlyHint` on a tool is *advice to the client*, not a security bou
 it is what makes a well-behaved client skip a confirmation prompt, nothing more.
 `BILLY_ALLOW_WRITES` is the actual enforcement.
 
+### Dry run by default
+
+Enabling writes does not make a write happen by accident. **Every write tool takes
+`dryRun`, which defaults to `true`**: the tool resolves and validates everything it can
+against live data (GET requests still run), then returns the exact request it *would*
+send — method, endpoint and body — without sending it:
+
+```json
+{ "dryRun": true, "request": { "method": "POST", "endpoint": "/daybookTransactions", "body": { "...": "..." } },
+  "preview": { "lines": [{ "account": "7120 Transferred Result", "side": "debit", "amount": 135000 }] } }
+```
+
+Review that, then repeat the call with `dryRun: false`. Journal entries add a third
+safeguard: they are created as **drafts** by default and only reach the ledger when
+someone approves them in Billy.
+
+> **Upgrading from 2.0:** write tools used to send immediately. They now dry-run unless
+> called with `dryRun: false`.
+
 > **Upgrading from 1.x:** writes used to be on by default, gated by `BILLY_READ_ONLY`.
 > That variable is now ignored (the server warns if it is set). If you rely on the write
 > tools, set `BILLY_ALLOW_WRITES=true`.
@@ -208,9 +230,9 @@ so clients can tell reads from writes:
 | --- | --- |
 | `readOnlyHint: true` | all `billy_get_*` and `billy_list_*` |
 | write, non-destructive | `billy_create_*` |
-| write, destructive, idempotent | `billy_update_contact`, `billy_update_invoice` |
+| write, destructive, idempotent | `billy_update_contact`, `billy_update_invoice`, `billy_delete_daybook_transaction` |
 
-Clients that gate on `destructiveHint` will prompt before the update tools run.
+Clients that gate on `destructiveHint` will prompt before the update and delete tools run.
 
 ## Usage Examples
 

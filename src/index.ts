@@ -37,7 +37,7 @@ function loadDotEnv(): void {
 loadDotEnv();
 
 const API_BASE_URL = process.env.BILLY_API_BASE_URL ?? "https://api.billysbilling.com/v2";
-const SERVER_VERSION = "2.0.0";
+const SERVER_VERSION = "2.1.0";
 
 const TRUTHY = /^(1|true|yes|on)$/i;
 
@@ -64,6 +64,9 @@ interface BillyConfig {
   accessToken: string;
   organizationId?: string;
   readOnly?: boolean;
+  /** Capture non-GET requests instead of sending them. GETs still run, so a dry
+   *  run can resolve accounts and validate against live data. */
+  dryRun?: boolean;
 }
 
 /** Hard cap on auto-paginated fetches, so a broad query cannot blow up the response. */
@@ -103,11 +106,18 @@ class BillyClient {
   private readonly accessToken: string;
   private readonly organizationId?: string;
   private readonly readOnly: boolean;
+  private readonly dryRun: boolean;
 
-  constructor(config: BillyConfig) {
+  constructor(private readonly config: BillyConfig) {
     this.accessToken = config.accessToken;
     this.organizationId = config.organizationId;
     this.readOnly = config.readOnly ?? false;
+    this.dryRun = config.dryRun ?? false;
+  }
+
+  /** A client that reads normally but returns writes as a description instead of sending them. */
+  withDryRun(): BillyClient {
+    return new BillyClient({ ...this.config, dryRun: true });
   }
 
   private async request(method: string, endpoint: string, data?: unknown): Promise<any> {
@@ -118,6 +128,10 @@ class BillyClient {
         `Refusing ${method.toUpperCase()} ${endpoint}: this server is read-only. ` +
           `Set BILLY_ALLOW_WRITES=true to enable write access.`
       );
+    }
+
+    if (this.dryRun && method.toUpperCase() !== "GET") {
+      return { dryRun: true, request: { method: method.toUpperCase(), endpoint, body: data ?? null } };
     }
 
     try {
@@ -214,6 +228,26 @@ class BillyClient {
 
   getAccounts(params?: Record<string, unknown>): Promise<any> {
     return this.request("GET", `/accounts${toQuery(params)}`);
+  }
+
+  getAllAccounts(): Promise<any> {
+    return this.getAllPages("/accounts", "accounts");
+  }
+
+  getDaybooks(): Promise<any> {
+    return this.getAllPages("/daybooks", "daybooks");
+  }
+
+  getDaybookTransaction(id: string): Promise<any> {
+    return this.request("GET", `/daybookTransactions/${encodeURIComponent(id)}${toQuery({ include: "daybookTransaction.lines" })}`);
+  }
+
+  createDaybookTransaction(transaction: Record<string, unknown>): Promise<any> {
+    return this.request("POST", "/daybookTransactions", { daybookTransaction: this.scoped(transaction) });
+  }
+
+  deleteDaybookTransaction(id: string): Promise<any> {
+    return this.request("DELETE", `/daybookTransactions/${encodeURIComponent(id)}`);
   }
 
   /**
@@ -433,16 +467,36 @@ const readOnly = { readOnlyHint: true, destructiveHint: false, openWorldHint: tr
 const creates = { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true } as const;
 const updates = { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: true } as const;
 
+/**
+ * Every write tool dry-runs by default: the request is returned, not sent. A write
+ * therefore takes two deliberate calls — review, then repeat with dryRun: false —
+ * on top of the BILLY_ALLOW_WRITES opt-in that exposes the tools at all.
+ */
+const dryRunParam = {
+  dryRun: z
+    .boolean()
+    .default(true)
+    .describe("Default true: return the exact request without sending it. Set false only after the dry run was reviewed."),
+};
+
+const dryRunOutput = {
+  dryRun: z.boolean().optional().describe("True when nothing was sent to Billy"),
+  request: z.looseObject({}).optional().describe("The request that would be sent (dry run only)"),
+  preview: z.looseObject({}).optional().describe("Human-readable summary of the change, where the tool provides one"),
+};
+
 type ToolResult = {
   content: { type: "text"; text: string }[];
   structuredContent?: Record<string, unknown>;
   isError?: boolean;
 };
 
-/** Runs a Billy call, returning the payload as both text and structured content. */
-async function call(fn: (client: BillyClient) => Promise<any>): Promise<ToolResult> {
+/** Runs a Billy call, returning the payload as both text and structured content.
+ *  With `dryRun`, writes are described rather than sent (see BillyClient.withDryRun). */
+async function call(fn: (client: BillyClient) => Promise<any>, dryRun = false): Promise<ToolResult> {
   try {
-    const data = await fn(getBillyClient());
+    const client = getBillyClient();
+    const data = await fn(dryRun ? client.withDryRun() : client);
     return {
       content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
       structuredContent: (data ?? {}) as Record<string, unknown>,
@@ -529,15 +583,16 @@ writeTools.push(
       title: "Create contact",
       description: "Create a new contact in Billy",
       inputSchema: {
+        ...dryRunParam,
         ...contactFields,
         name: z.string().describe("Contact name"),
         countryId: z.string().describe("Country ID (e.g. 'DK', 'US')"),
         type: z.enum(["company", "person"]).optional().describe("Contact type"),
       },
-      outputSchema: billyEnvelope("contacts", "list"),
+      outputSchema: { ...billyEnvelope("contacts", "list"), ...dryRunOutput },
       annotations: creates,
     },
-    (args) => call((billy) => billy.createContact(args))
+    ({ dryRun, ...args }) => call((billy) => billy.createContact(args), dryRun)
   )
 );
 
@@ -547,11 +602,11 @@ writeTools.push(
     {
       title: "Update contact",
       description: "Update an existing contact. Only the supplied fields are changed.",
-      inputSchema: { ...contactFields, id: z.string().describe("Contact ID") },
-      outputSchema: billyEnvelope("contacts", "list"),
+      inputSchema: { ...dryRunParam, ...contactFields, id: z.string().describe("Contact ID") },
+      outputSchema: { ...billyEnvelope("contacts", "list"), ...dryRunOutput },
       annotations: updates,
     },
-    ({ id, ...contact }) => call((billy) => billy.updateContact(id, contact))
+    ({ id, dryRun, ...contact }) => call((billy) => billy.updateContact(id, contact), dryRun)
   )
 );
 
@@ -616,16 +671,17 @@ writeTools.push(
       title: "Create invoice",
       description: "Create a new invoice in Billy",
       inputSchema: {
+        ...dryRunParam,
         ...invoiceFields,
         contactId: z.string().describe("Contact ID"),
         entryDate: z.string().describe("Invoice date (YYYY-MM-DD)"),
         currencyId: z.string().describe("Currency ID (e.g. 'DKK', 'USD')"),
         lines: z.array(invoiceLine).min(1).describe("Invoice lines (at least one)"),
       },
-      outputSchema: billyEnvelope("invoices", "list"),
+      outputSchema: { ...billyEnvelope("invoices", "list"), ...dryRunOutput },
       annotations: creates,
     },
-    (args) => call((billy) => billy.createInvoice(args))
+    ({ dryRun, ...args }) => call((billy) => billy.createInvoice(args), dryRun)
   )
 );
 
@@ -635,11 +691,11 @@ writeTools.push(
     {
       title: "Update invoice",
       description: "Update an existing invoice. Only the supplied fields are changed. Approved invoices are generally immutable in Billy.",
-      inputSchema: { ...invoiceFields, id: z.string().describe("Invoice ID") },
-      outputSchema: billyEnvelope("invoices", "list"),
+      inputSchema: { ...dryRunParam, ...invoiceFields, id: z.string().describe("Invoice ID") },
+      outputSchema: { ...billyEnvelope("invoices", "list"), ...dryRunOutput },
       annotations: updates,
     },
-    ({ id, ...invoice }) => call((billy) => billy.updateInvoice(id, invoice))
+    ({ id, dryRun, ...invoice }) => call((billy) => billy.updateInvoice(id, invoice), dryRun)
   )
 );
 
@@ -683,6 +739,7 @@ writeTools.push(
       title: "Create product",
       description: "Create a new product in Billy",
       inputSchema: {
+        ...dryRunParam,
         name: z.string().describe("Product name"),
         description: z.string().optional().describe("Product description"),
         productNo: z.string().optional().describe("Product number/SKU"),
@@ -698,10 +755,10 @@ writeTools.push(
           .optional()
           .describe("Product prices for different currencies"),
       },
-      outputSchema: billyEnvelope("products", "list"),
+      outputSchema: { ...billyEnvelope("products", "list"), ...dryRunOutput },
       annotations: creates,
     },
-    (args) => call((billy) => billy.createProduct(args))
+    ({ dryRun, ...args }) => call((billy) => billy.createProduct(args), dryRun)
   )
 );
 
@@ -730,6 +787,7 @@ writeTools.push(
       title: "Create payment",
       description: "Create a payment to mark invoices or bills as paid",
       inputSchema: {
+        ...dryRunParam,
         entryDate: z.string().describe("Payment date (YYYY-MM-DD)"),
         cashAmount: z.number().describe("Payment amount"),
         cashSide: z.enum(["debit", "credit"]).describe("debit for invoice payments, credit for bill payments"),
@@ -745,10 +803,10 @@ writeTools.push(
         feeAmount: z.number().optional().describe("Bank/payment fee amount"),
         feeAccountId: z.string().optional().describe("Expense account ID for fees"),
       },
-      outputSchema: billyEnvelope("bankPayments", "list"),
+      outputSchema: { ...billyEnvelope("bankPayments", "list"), ...dryRunOutput },
       annotations: creates,
     },
-    (args) => call((billy) => billy.createBankPayment(args))
+    ({ dryRun, ...args }) => call((billy) => billy.createBankPayment(args), dryRun)
   )
 );
 
@@ -781,6 +839,7 @@ writeTools.push(
       description:
         "Create a bill (vendor invoice) in Billy. Line fields follow Billy's bill resource; unknown line fields are passed through unchanged.",
       inputSchema: {
+        ...dryRunParam,
         contactId: z.string().describe("Supplier contact ID"),
         entryDate: z.string().describe("Bill date (YYYY-MM-DD)"),
         currencyId: z.string().describe("Currency ID (e.g. 'DKK', 'USD')"),
@@ -800,10 +859,10 @@ writeTools.push(
           .min(1)
           .describe("Bill lines (at least one)"),
       },
-      outputSchema: billyEnvelope("bills", "list"),
+      outputSchema: { ...billyEnvelope("bills", "list"), ...dryRunOutput },
       annotations: creates,
     },
-    (args) => call((billy) => billy.createBill(args))
+    ({ dryRun, ...args }) => call((billy) => billy.createBill(args), dryRun)
   )
 );
 
@@ -890,6 +949,176 @@ server.registerTool(
     annotations: readOnly,
   },
   (args) => call((billy) => billy.getDaybookTransactions(args))
+);
+
+const daybookLine = z.object({
+  account: z.string().describe("Account number (e.g. '7161') or account ID"),
+  side: z.enum(["debit", "credit"]).describe("Side this line posts to on `account`"),
+  amount: z.number().positive().describe("Amount; VAT-inclusive when taxRateId is set (Billy splits the VAT off)"),
+  text: z.string().optional().describe("Line text"),
+  taxRateId: z.string().optional().describe("Tax rate ID; omit for no VAT"),
+  contraAccount: z
+    .string()
+    .optional()
+    .describe("Account number or ID for the opposite side. Makes the line balance on its own"),
+});
+
+type DaybookInput = {
+  entryDate: string;
+  description?: string;
+  voucherNo?: string;
+  daybookId?: string;
+  currencyId?: string;
+  state: "draft" | "approved";
+  lines: z.infer<typeof daybookLine>[];
+};
+
+const cents = (n: number) => Math.round(n * 100) / 100;
+
+/**
+ * Resolves account numbers to IDs against the live chart of accounts, checks that
+ * the entry balances, and builds both the request body and a readable preview.
+ * Everything that can be wrong with an entry is caught here, before any write.
+ */
+async function prepareDaybookTransaction(billy: BillyClient, input: DaybookInput) {
+  const [{ accounts }, { daybooks }, { organization }] = await Promise.all([
+    billy.getAllAccounts(),
+    billy.getDaybooks(),
+    billy.getOrganization(),
+  ]);
+
+  const resolveAccount = (ref: string) => {
+    const account = (accounts as any[]).find((a) => a.id === ref || String(a.accountNo) === ref);
+    if (!account) throw new Error(`Unknown account "${ref}"`);
+    if (account.isArchived) throw new Error(`Account ${account.accountNo} ${account.name} is archived`);
+    return account;
+  };
+  const label = (a: any) => `${a.accountNo} ${a.name}`;
+
+  let daybookId = input.daybookId;
+  if (!daybookId) {
+    if ((daybooks as any[]).length !== 1) {
+      const names = (daybooks as any[]).map((d) => `${d.id} (${d.name})`).join(", ");
+      throw new Error(`Specify daybookId; this organisation has ${daybooks.length} daybooks: ${names}`);
+    }
+    daybookId = daybooks[0].id;
+  }
+  const daybook = (daybooks as any[]).find((d) => d.id === daybookId);
+  if (!daybook) throw new Error(`Unknown daybook "${daybookId}"`);
+
+  const currencyId = input.currencyId ?? organization?.baseCurrencyId ?? "DKK";
+  const lines = input.lines.map((line, index) => ({
+    ...line,
+    account: resolveAccount(line.account),
+    contra: line.contraAccount ? resolveAccount(line.contraAccount) : undefined,
+    amount: cents(line.amount),
+    priority: index + 1,
+  }));
+
+  // Lines with a contra account balance themselves; the rest must net to zero.
+  const open = lines.filter((l) => !l.contra);
+  const debit = cents(open.filter((l) => l.side === "debit").reduce((sum, l) => sum + l.amount, 0));
+  const credit = cents(open.filter((l) => l.side === "credit").reduce((sum, l) => sum + l.amount, 0));
+  if (debit !== credit) {
+    throw new Error(`Entry does not balance: debit ${debit} vs credit ${credit} (lines without a contra account)`);
+  }
+
+  const transaction = {
+    organizationId: organization?.id,
+    daybookId,
+    entryDate: input.entryDate,
+    voucherNo: input.voucherNo,
+    description: input.description,
+    state: input.state,
+    lines: lines.map((l) => ({
+      accountId: l.account.id,
+      contraAccountId: l.contra?.id,
+      side: l.side,
+      amount: l.amount,
+      text: l.text,
+      taxRateId: l.taxRateId,
+      currencyId,
+      priority: l.priority,
+    })),
+  };
+
+  const preview = {
+    entryDate: input.entryDate,
+    state: input.state,
+    daybook: daybook.name,
+    description: input.description ?? null,
+    currencyId,
+    lines: lines.map((l) => ({
+      account: label(l.account),
+      side: l.side,
+      amount: l.amount,
+      ...(l.contra ? { contraAccount: label(l.contra) } : {}),
+      ...(l.taxRateId ? { taxRateId: l.taxRateId } : {}),
+      ...(l.text ? { text: l.text } : {}),
+    })),
+  };
+
+  return { transaction, preview };
+}
+
+writeTools.push(
+  server.registerTool(
+    "billy_create_daybook_transaction",
+    {
+      title: "Create journal entry",
+      description:
+        "Create a manual journal entry (kassekladde) for postings that have no invoice or bill behind them: " +
+        "reclassifications, accruals, dividend and equity entries. Accounts may be given by number. " +
+        "The entry must balance. Dry-runs by default, and creates a DRAFT unless state is 'approved', " +
+        "so nothing reaches the ledger until someone approves it in Billy. Not for bank lines: " +
+        "match those in Billy's bank reconciliation.",
+      inputSchema: {
+        ...dryRunParam,
+        entryDate: z.string().regex(ISO_DATE, "must be YYYY-MM-DD").describe("Entry date (YYYY-MM-DD)"),
+        description: z.string().optional().describe("Entry description"),
+        voucherNo: z.string().optional().describe("Voucher number"),
+        daybookId: z.string().optional().describe("Daybook ID; defaults to the organisation's only daybook"),
+        currencyId: z.string().optional().describe("Currency; defaults to the organisation's base currency"),
+        state: z.enum(["draft", "approved"]).default("draft").describe("Default draft; approve in Billy after review"),
+        lines: z.array(daybookLine).min(1).describe("Entry lines"),
+      },
+      outputSchema: { ...billyEnvelope("daybookTransactions", "list"), ...dryRunOutput },
+      annotations: creates,
+    },
+    ({ dryRun, ...input }) =>
+      call(async (billy) => {
+        const { transaction, preview } = await prepareDaybookTransaction(billy, input);
+        return { ...(await billy.createDaybookTransaction(transaction)), preview };
+      }, dryRun)
+  )
+);
+
+writeTools.push(
+  server.registerTool(
+    "billy_delete_daybook_transaction",
+    {
+      title: "Delete draft journal entry",
+      description:
+        "Delete a DRAFT journal entry. Approved entries are refused: void those in Billy so the audit trail stays. " +
+        "Dry-runs by default.",
+      inputSchema: {
+        ...dryRunParam,
+        id: z.string().describe("Daybook transaction ID"),
+      },
+      outputSchema: { ...billyEnvelope("daybookTransactions", "list"), ...dryRunOutput },
+      annotations: updates,
+    },
+    ({ id, dryRun }) =>
+      call(async (billy) => {
+        const { daybookTransaction: entry } = await billy.getDaybookTransaction(id);
+        if (!entry) throw new Error(`Daybook transaction "${id}" not found`);
+        if (entry.state !== "draft") {
+          throw new Error(`Refusing to delete this entry: it is ${entry.state}, and only drafts can be deleted. Void it in Billy instead.`);
+        }
+        const preview = { id, entryDate: entry.entryDate, description: entry.description, state: entry.state };
+        return { ...(await billy.deleteDaybookTransaction(id)), preview };
+      }, dryRun)
+  )
 );
 
 server.registerTool(

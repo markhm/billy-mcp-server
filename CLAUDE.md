@@ -27,14 +27,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 An MCP server that exposes Billy's accounting API to MCP clients. Single source file,
 `src/index.ts`, in two halves:
 
-**BillyClient class (src/index.ts:34-137)**
+**BillyClient class**
 - All Billy API communication, authenticated via the `X-Access-Token` header
-- Methods for organization, contacts, invoices, products, payments, bills and accounts
+- Methods for organization, contacts, invoices, products, payments, bills, accounts,
+  VAT returns, postings and daybook (journal) transactions
 - Base URL `https://api.billysbilling.com/v2`, overridable via `BILLY_API_BASE_URL`
 
-**Tool registrations (src/index.ts:235-590)**
+**Tool registrations**
 - Built on `McpServer` + `registerTool` from `@modelcontextprotocol/sdk`
-- 17 tools, grouped by resource with `// ---` section banners
+- 25 tools (16 read, 9 write), grouped by resource with `// ---` section banners
 - stdio transport; Billy client is lazily constructed on the first tool call
 
 ### Key Design Patterns
@@ -66,6 +67,27 @@ An MCP server that exposes Billy's accounting API to MCP clients. Single source 
 - **New mutating tools must be registered through `writeTools.push(...)`**, or they
   will stay exposed in read-only mode (the non-GET guard still blocks them)
 - `BILLY_READ_ONLY` from 1.x is ignored; the server warns if it is still set
+
+**Every write dry-runs by default**
+- Each write tool takes `dryRun` (default `true`). `call(fn, dryRun)` hands the tool a
+  `client.withDryRun()` client whose `request()` returns non-GET requests as
+  `{dryRun, request: {method, endpoint, body}}` instead of sending them. GETs still
+  run, so a dry run resolves and validates against live data
+- A real write needs two deliberate steps: review the dry run, then repeat with
+  `dryRun: false`. **New write tools must spread `...dryRunParam` / `...dryRunOutput`
+  and pass `dryRun` to `call()`**
+- Tools that can summarise their change return a `preview` next to the result
+
+**Journal entries (`billy_create_daybook_transaction`)**
+- For postings with no invoice or bill behind them: reclassifications, accruals,
+  dividend and equity entries. Bank lines are matched in Billy, not through the API
+- `prepareDaybookTransaction()` resolves account numbers against the live chart,
+  refuses archived/unknown accounts and unbalanced entries (lines with a contra
+  account balance themselves), and defaults to the organisation's only daybook
+- Created as **draft** by default: nothing reaches the ledger until approved in Billy
+- `billy_delete_daybook_transaction` only deletes drafts; approved entries must be
+  voided in Billy to keep the audit trail
+- Daybook line amounts are VAT-inclusive when `taxRateId` is set (Billy splits VAT)
 
 **Billy filters are not uniformly honoured — verified empirically**
 - `entryDatePeriod=dates:FROM...TO` works on `/invoices`, `/bills`, `/postings`
