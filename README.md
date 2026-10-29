@@ -321,13 +321,28 @@ npm run test:connection
 
 ```
 src/
-  index.ts          # Main server implementation
-test-connection.js  # API connection test utility
-.env.example        # Environment variable template
-build/              # Compiled JavaScript output
-package.json        # Dependencies and scripts
-tsconfig.json       # TypeScript configuration
-README.md           # This file
+  index.ts            # Entry point: creates the server, registers every tool module
+  config.ts           # Loads .env; API base URL, version, the BILLY_ALLOW_WRITES switch
+  client.ts           # BillyClient: all HTTP calls to the Billy v2 API
+  tools/
+    shared.ts         # Schema fragments, annotation presets, dry-run fragments, call()
+    organization.ts   # One module per part of the Billy API
+    contacts.ts
+    invoices.ts
+    products.ts
+    payments.ts
+    bills.ts
+    accounts.ts       # Chart of accounts and account groups
+    vat.ts            # VAT returns and tax rates
+    postings.ts       # Ledger postings
+    daybook.ts        # Journal entries: list, create (draft), delete (drafts only)
+test-connection.js    # API connection test utility
+.env.example          # Environment variable template
+.node-version         # Node 26 (also pinned in mise.toml)
+build/                # Compiled JavaScript output
+package.json          # Dependencies and scripts
+tsconfig.json         # TypeScript configuration
+README.md             # This file
 ```
 
 ## MCP protocol version
@@ -360,7 +375,11 @@ This MCP server supports the core Billy API functionality including:
 - ✅ Product catalog management
 - ✅ Payment processing
 - ✅ Bill management (vendor invoices)
-- ✅ Chart of accounts access
+- ✅ Chart of accounts and account groups
+- ✅ VAT returns (momsangivelser) and tax rates
+- ✅ Ledger postings, the ground truth for VAT and balances
+- ✅ Journal entries (kassekladde): list, create as draft, delete drafts
+- ✅ Read-only by default; every write dry-runs unless `dryRun: false`
 - ✅ Pagination and filtering
 - ✅ Related data inclusion (sideloading/embedding)
 - ✅ Error handling and validation
@@ -369,7 +388,8 @@ This MCP server supports the core Billy API functionality including:
 
 - Authentication is limited to access tokens (OAuth not yet supported by Billy)
 - Some advanced features like late fees, reminders, and attachments are not yet implemented
-- Bank line matching and daybook transactions are not included in this version
+- Bank line matching is not available through the API; match bank lines in Billy.
+  Journal entries (daybook transactions) are supported, as drafts by default.
 
 ## Security Considerations
 
@@ -380,37 +400,37 @@ This MCP server supports the core Billy API functionality including:
 
 ## Contributing
 
-To extend this MCP server:
+To add a tool:
 
-1. Add new tools to the `ListToolsRequestSchema` handler
-2. Implement the corresponding API calls in the `BillyClient` class
-3. Add the tool handling logic in the `CallToolRequestSchema` handler
-4. Update this README with the new functionality
-
-### Adding a New Tool Example
+1. Add the API call to `BillyClient` in `src/client.ts`. Everything goes through
+   `request()`, which enforces read-only mode and dry runs.
+2. Register the tool in the module for its Billy resource, `src/tools/<resource>.ts`, or
+   add a new module and call its `register…Tools` function from `src/index.ts`.
+3. Use the shared fragments from `src/tools/shared.ts`: `billyEnvelope()` for the output
+   schema, an annotation preset (`readOnly`, `creates`, `updates`), and `call()` to run
+   the client method.
+4. **Write tools** must be registered as `writeTools.push(server.registerTool(...))` so
+   they disappear in read-only mode, and must spread `...dryRunParam` into the input
+   schema, `...dryRunOutput` into the output schema, and pass `dryRun` to `call()`.
+5. Before exposing a Billy filter, check against a live account that it actually
+   narrows the result (see *Date filtering* above).
+6. Update this README.
 
 ```typescript
-// 1. Add to tools list
-{
-  name: "billy_new_feature",
-  description: "Description of the new feature",
-  inputSchema: {
-    type: "object",
-    properties: {
-      // Define parameters
+// src/tools/<resource>.ts
+writeTools.push(
+  server.registerTool(
+    "billy_create_thing",
+    {
+      title: "Create thing",
+      description: "Create a thing in Billy",
+      inputSchema: { ...dryRunParam, name: z.string().describe("Name") },
+      outputSchema: { ...billyEnvelope("things", "list"), ...dryRunOutput },
+      annotations: creates,
     },
-  },
-}
-
-// 2. Add to BillyClient class
-async newFeature(params: any): Promise<any> {
-  return this.request("GET", "/new-endpoint", params);
-}
-
-// 3. Add to request handler
-case "billy_new_feature":
-  const result = await billyClient.newFeature(args);
-  return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+    ({ dryRun, ...args }) => call((billy) => billy.createThing(args), dryRun)
+  )
+);
 ```
 
 ## Troubleshooting

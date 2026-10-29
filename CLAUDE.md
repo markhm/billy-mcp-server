@@ -25,8 +25,21 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Architecture
 
-An MCP server that exposes Billy's accounting API to MCP clients. Single source file,
-`src/index.ts`, in two halves:
+An MCP server that exposes Billy's accounting API to MCP clients. Infrastructure modules
+plus one tool module per Billy resource:
+
+- `src/index.ts` creates the server, calls every `register…Tools` function, then removes
+  the write tools in read-only mode
+- `src/config.ts` loads `.env` and computes the env-derived constants. `loadDotEnv()`
+  must run in this module, above the constants, and the file must compile directly into
+  `build/`, because it resolves the package root from its own location
+- `src/client.ts` holds `BillyClient` and `getBillyClient()`
+- `src/tools/shared.ts` holds the schema fragments, annotation presets, dry-run
+  fragments, `call()` and the `ToolRegistry` type
+- `src/tools/<resource>.ts` registers one resource's tools: organization, contacts,
+  invoices, products, payments, bills, accounts, vat, postings, daybook
+- Relative imports need the `.js` extension (`"./config.js"`). tsc accepts them without
+  it but Node ESM then fails at runtime
 
 **BillyClient class**
 - All Billy API communication, authenticated via the `X-Access-Token` header
@@ -36,7 +49,7 @@ An MCP server that exposes Billy's accounting API to MCP clients. Single source 
 
 **Tool registrations**
 - Built on `McpServer` + `registerTool` from `@modelcontextprotocol/sdk`
-- 25 tools (16 read, 9 write), grouped by resource with `// ---` section banners
+- 25 tools (16 read, 9 write), one module per Billy resource under `src/tools/`
 - stdio transport; Billy client is lazily constructed on the first tool call
 
 ### Key Design Patterns
@@ -65,7 +78,8 @@ An MCP server that exposes Billy's accounting API to MCP clients. Single source 
   registration (`writeTools`), and `BillyClient.request()` rejects any non-GET method
 - Billy has no scoped/read-only access token and no read-only user role, so this
   server is the only enforcement point. `readOnlyHint` is a client hint, not a guard
-- **New mutating tools must be registered through `writeTools.push(...)`**, or they
+- **New mutating tools must be registered through `writeTools.push(...)`** in their
+  `src/tools/<resource>.ts` module, or they
   will stay exposed in read-only mode (the non-GET guard still blocks them)
 - `BILLY_READ_ONLY` from 1.x is ignored; the server warns if it is still set
 
@@ -111,9 +125,15 @@ An MCP server that exposes Billy's accounting API to MCP clients. Single source 
 ## File Structure
 
 ```
-src/index.ts           # MCP server implementation
+src/index.ts           # Entry point: server, tool registration, read-only removal
+src/config.ts          # .env loading, API base URL, version, BILLY_ALLOW_WRITES
+src/client.ts          # BillyClient (all HTTP calls)
+src/tools/shared.ts    # Schema fragments, annotations, dry-run fragments, call()
+src/tools/*.ts         # One module per Billy resource
 test-connection.js     # API connection test utility
 .env.example           # Environment variable template
+.node-version          # Node 26 pin (mise.toml pins it for mise too)
+FP_CLAUDE.md, .fp/     # fp issue tracking (labels: development / operations)
 build/                 # Compiled JavaScript output
 package.json           # Dependencies and npm scripts
 tsconfig.json          # TypeScript configuration
