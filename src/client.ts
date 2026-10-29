@@ -21,13 +21,13 @@ const MAX_RECORDS = 5000;
  * it is SILENTLY IGNORED on /daybookTransactions and /salesTaxReturns, which return
  * the full set instead of erroring, so those are filtered client-side below.
  */
-function entryDatePeriodParam(fromDate?: string, toDate?: string): Record<string, string> {
+export function entryDatePeriodParam(fromDate?: string, toDate?: string): Record<string, string> {
   if (!fromDate && !toDate) return {};
   return { entryDatePeriod: `dates:${fromDate ?? "1900-01-01"}...${toDate ?? "2999-12-31"}` };
 }
 
 /** Inclusive ISO date-range test. ISO-8601 dates compare correctly as strings. */
-function withinRange(date: unknown, fromDate?: string, toDate?: string): boolean {
+export function withinRange(date: unknown, fromDate?: string, toDate?: string): boolean {
   if (typeof date !== "string") return false;
   if (fromDate && date < fromDate) return false;
   if (toDate && date > toDate) return false;
@@ -35,7 +35,7 @@ function withinRange(date: unknown, fromDate?: string, toDate?: string): boolean
 }
 
 /** Serialise query params, skipping absent values and coercing booleans/numbers. */
-function toQuery(params: Record<string, unknown> = {}): string {
+export function toQuery(params: Record<string, unknown> = {}): string {
   const search = new URLSearchParams();
   for (const [key, value] of Object.entries(params)) {
     if (value === undefined || value === null) continue;
@@ -282,7 +282,7 @@ export class BillyClient {
  * body with a plain-text line (e.g. "LOGGER ERROR: ..."), which leaves axios
  * holding an unparsed string, so recover the JSON object embedded in it.
  */
-function describeErrorBody(body: unknown): string | undefined {
+export function describeErrorBody(body: unknown): string | undefined {
   if (body === undefined || body === null) return undefined;
 
   if (typeof body === "string") {

@@ -315,8 +315,20 @@ npm run typecheck  # type-check only
 ### Verifying the connection
 
 ```bash
+npm test               # unit + tool-surface tests: no network, no token needed
+npm run test:live      # also runs tests/live/ against your account (dry runs only)
 npm run test:connection
 ```
+
+`npm test` builds first and runs `tests/` with Node's built-in test runner:
+
+- `tests/unit/` covers the client helpers, the read-only and dry-run guards, and
+  journal-entry balancing and account resolution against a stub client.
+- `tests/surface.test.js` starts the server over stdio and compares every tool's
+  name, schema and annotations, in both modes, with `tests/fixtures/tool-surface.json`.
+  After an intentional change, regenerate it with `UPDATE_SNAPSHOT=1 npm test`.
+- `tests/live/` runs only with `BILLY_LIVE_TESTS=1`. Every write call there is a dry run,
+  and the suite fails if the number of journal entries changed.
 
 ### File Structure
 
@@ -337,6 +349,7 @@ src/
     vat.ts            # VAT returns and tax rates
     postings.ts       # Ledger postings
     daybook.ts        # Journal entries: list, create (draft), delete (drafts only)
+tests/                # node:test suites (unit, tool surface, live)
 test-connection.js    # API connection test utility
 .env.example          # Environment variable template
 .node-version         # Node 26 (also pinned in mise.toml)

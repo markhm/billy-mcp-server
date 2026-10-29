@@ -16,7 +16,9 @@
     "dev": "tsx src/index.ts",
     "watch": "tsx watch src/index.ts",
     "typecheck": "tsc --noEmit",
-    "test:connection": "node test-connection.js"
+    "test:connection": "node test-connection.js",
+    "test": "npm run build && node --test \"tests/**/*.test.js\"",
+    "test:live": "BILLY_LIVE_TESTS=1 npm test"
   },
   "keywords": [
     "mcp",

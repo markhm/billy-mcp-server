@@ -12,8 +12,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `npm start` - Run the compiled server from build/index.js
 
 ### Testing
-- `npm run test:connection` - Test Billy API connection and verify credentials
-- Set `BILLY_ACCESS_TOKEN` (env var or `.env`) before running
+- `npm test` - Build, then run `tests/**/*.test.js` with `node:test` (no network, no token)
+- `npm run test:live` - The same plus `tests/live/`, against the real account in `.env`.
+  Every write there is a dry run, and the last test asserts nothing was written
+- `UPDATE_SNAPSHOT=1 npm test` - Regenerate `tests/fixtures/tool-surface.json` after an
+  intentional change to a tool's name, schema, description or annotations
+- `npm run test:connection` - Quick credentials check against the live API
+- Tests import from `build/`, not `src/`: Node's type stripping rejects the
+  `BillyClient` constructor parameter property, and the `.js` import specifiers only
+  resolve after compiling. Anything a unit test needs must be exported
 
 ### Environment Setup
 - Requires Node.js 26+ (`engines`, `.node-version`, `mise.toml`). `process.loadEnvFile`

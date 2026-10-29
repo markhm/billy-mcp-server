@@ -33,7 +33,7 @@ const cents = (n: number) => Math.round(n * 100) / 100;
  * the entry balances, and builds both the request body and a readable preview.
  * Everything that can be wrong with an entry is caught here, before any write.
  */
-async function prepareDaybookTransaction(billy: BillyClient, input: DaybookInput) {
+export async function prepareDaybookTransaction(billy: BillyClient, input: DaybookInput) {
   const [{ accounts }, { daybooks }, { organization }] = await Promise.all([
     billy.getAllAccounts(),
     billy.getDaybooks(),

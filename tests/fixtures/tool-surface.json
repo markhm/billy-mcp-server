@@ -1,0 +1,4566 @@
+{
+ "readonly": [
+  {
+   "name": "billy_get_contact",
+   "title": "Get contact",
+   "description": "Get a specific contact by ID",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "type": "string",
+      "description": "Contact ID"
+     },
+     "include": {
+      "description": "Related resources to include (e.g. 'contact.contactPersons')",
+      "type": "string"
+     }
+    },
+    "required": [
+     "id"
+    ],
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "outputSchema": {
+    "type": "object",
+    "properties": {
+     "meta": {
+      "description": "Billy response metadata (status, paging)",
+      "type": "object",
+      "properties": {
+       "statusCode": {
+        "type": "number"
+       },
+       "success": {
+        "type": "boolean"
+       },
+       "paging": {
+        "description": "Pagination info; use `total`/`pageCount` to decide whether to page further",
+        "type": "object",
+        "properties": {
+         "page": {
+          "type": "number"
+         },
+         "pageSize": {
+          "type": "number"
+         },
+         "pageCount": {
+          "description": "Total number of pages",
+          "type": "number"
+         },
+         "total": {
+          "description": "Total number of matching records",
+          "type": "number"
+         },
+         "nextUrl": {
+          "type": "string"
+         },
+         "lastUrl": {
+          "type": "string"
+         }
+        },
+        "additionalProperties": {}
+       }
+      },
+      "additionalProperties": {}
+     },
+     "contact": {
+      "description": "The contact returned by Billy",
+      "type": "object",
+      "properties": {},
+      "additionalProperties": {}
+     },
+     "contactPersons": {
+      "description": "Related contactPersons, present when requested via `include`",
+      "type": "array",
+      "items": {
+       "type": "object",
+       "properties": {},
+       "additionalProperties": {}
+      }
+     }
+    },
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "additionalProperties": false
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "destructiveHint": false,
+    "openWorldHint": true
+   },
+   "execution": {
+    "taskSupport": "forbidden"
+   }
+  },
+  {
+   "name": "billy_get_invoice",
+   "title": "Get invoice",
+   "description": "Get a specific invoice by ID",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "type": "string",
+      "description": "Invoice ID"
+     },
+     "include": {
+      "description": "Related resources to include (e.g. 'invoice.lines,invoice.contact')",
+      "type": "string"
+     }
+    },
+    "required": [
+     "id"
+    ],
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "outputSchema": {
+    "type": "object",
+    "properties": {
+     "meta": {
+      "description": "Billy response metadata (status, paging)",
+      "type": "object",
+      "properties": {
+       "statusCode": {
+        "type": "number"
+       },
+       "success": {
+        "type": "boolean"
+       },
+       "paging": {
+        "description": "Pagination info; use `total`/`pageCount` to decide whether to page further",
+        "type": "object",
+        "properties": {
+         "page": {
+          "type": "number"
+         },
+         "pageSize": {
+          "type": "number"
+         },
+         "pageCount": {
+          "description": "Total number of pages",
+          "type": "number"
+         },
+         "total": {
+          "description": "Total number of matching records",
+          "type": "number"
+         },
+         "nextUrl": {
+          "type": "string"
+         },
+         "lastUrl": {
+          "type": "string"
+         }
+        },
+        "additionalProperties": {}
+       }
+      },
+      "additionalProperties": {}
+     },
+     "invoice": {
+      "description": "The invoice returned by Billy",
+      "type": "object",
+      "properties": {},
+      "additionalProperties": {}
+     },
+     "invoiceLines": {
+      "description": "Related invoiceLines, present when requested via `include`",
+      "type": "array",
+      "items": {
+       "type": "object",
+       "properties": {},
+       "additionalProperties": {}
+      }
+     }
+    },
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "additionalProperties": false
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "destructiveHint": false,
+    "openWorldHint": true
+   },
+   "execution": {
+    "taskSupport": "forbidden"
+   }
+  },
+  {
+   "name": "billy_get_organization",
+   "title": "Get organization",
+   "description": "Get organization details from Billy",
+   "inputSchema": {
+    "type": "object",
+    "properties": {},
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "outputSchema": {
+    "type": "object",
+    "properties": {
+     "meta": {
+      "description": "Billy response metadata (status, paging)",
+      "type": "object",
+      "properties": {
+       "statusCode": {
+        "type": "number"
+       },
+       "success": {
+        "type": "boolean"
+       },
+       "paging": {
+        "description": "Pagination info; use `total`/`pageCount` to decide whether to page further",
+        "type": "object",
+        "properties": {
+         "page": {
+          "type": "number"
+         },
+         "pageSize": {
+          "type": "number"
+         },
+         "pageCount": {
+          "description": "Total number of pages",
+          "type": "number"
+         },
+         "total": {
+          "description": "Total number of matching records",
+          "type": "number"
+         },
+         "nextUrl": {
+          "type": "string"
+         },
+         "lastUrl": {
+          "type": "string"
+         }
+        },
+        "additionalProperties": {}
+       }
+      },
+      "additionalProperties": {}
+     },
+     "organization": {
+      "description": "The organization returned by Billy",
+      "type": "object",
+      "properties": {},
+      "additionalProperties": {}
+     }
+    },
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "additionalProperties": false
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "destructiveHint": false,
+    "openWorldHint": true
+   },
+   "execution": {
+    "taskSupport": "forbidden"
+   }
+  },
+  {
+   "name": "billy_get_product",
+   "title": "Get product",
+   "description": "Get a specific product by ID",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "type": "string",
+      "description": "Product ID"
+     },
+     "include": {
+      "description": "Related resources to include (e.g. 'product.prices')",
+      "type": "string"
+     }
+    },
+    "required": [
+     "id"
+    ],
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "outputSchema": {
+    "type": "object",
+    "properties": {
+     "meta": {
+      "description": "Billy response metadata (status, paging)",
+      "type": "object",
+      "properties": {
+       "statusCode": {
+        "type": "number"
+       },
+       "success": {
+        "type": "boolean"
+       },
+       "paging": {
+        "description": "Pagination info; use `total`/`pageCount` to decide whether to page further",
+        "type": "object",
+        "properties": {
+         "page": {
+          "type": "number"
+         },
+         "pageSize": {
+          "type": "number"
+         },
+         "pageCount": {
+          "description": "Total number of pages",
+          "type": "number"
+         },
+         "total": {
+          "description": "Total number of matching records",
+          "type": "number"
+         },
+         "nextUrl": {
+          "type": "string"
+         },
+         "lastUrl": {
+          "type": "string"
+         }
+        },
+        "additionalProperties": {}
+       }
+      },
+      "additionalProperties": {}
+     },
+     "product": {
+      "description": "The product returned by Billy",
+      "type": "object",
+      "properties": {},
+      "additionalProperties": {}
+     },
+     "productPrices": {
+      "description": "Related productPrices, present when requested via `include`",
+      "type": "array",
+      "items": {
+       "type": "object",
+       "properties": {},
+       "additionalProperties": {}
+      }
+     }
+    },
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "additionalProperties": false
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "destructiveHint": false,
+    "openWorldHint": true
+   },
+   "execution": {
+    "taskSupport": "forbidden"
+   }
+  },
+  {
+   "name": "billy_get_sales_tax_return",
+   "title": "Get VAT return",
+   "description": "Get a single VAT return (momsangivelse) by ID",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "type": "string",
+      "description": "Sales tax return ID"
+     }
+    },
+    "required": [
+     "id"
+    ],
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "outputSchema": {
+    "type": "object",
+    "properties": {
+     "meta": {
+      "description": "Billy response metadata (status, paging)",
+      "type": "object",
+      "properties": {
+       "statusCode": {
+        "type": "number"
+       },
+       "success": {
+        "type": "boolean"
+       },
+       "paging": {
+        "description": "Pagination info; use `total`/`pageCount` to decide whether to page further",
+        "type": "object",
+        "properties": {
+         "page": {
+          "type": "number"
+         },
+         "pageSize": {
+          "type": "number"
+         },
+         "pageCount": {
+          "description": "Total number of pages",
+          "type": "number"
+         },
+         "total": {
+          "description": "Total number of matching records",
+          "type": "number"
+         },
+         "nextUrl": {
+          "type": "string"
+         },
+         "lastUrl": {
+          "type": "string"
+         }
+        },
+        "additionalProperties": {}
+       }
+      },
+      "additionalProperties": {}
+     },
+     "salesTaxReturn": {
+      "description": "The salesTaxReturn returned by Billy",
+      "type": "object",
+      "properties": {},
+      "additionalProperties": {}
+     }
+    },
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "additionalProperties": false
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "destructiveHint": false,
+    "openWorldHint": true
+   },
+   "execution": {
+    "taskSupport": "forbidden"
+   }
+  },
+  {
+   "name": "billy_list_account_groups",
+   "title": "List account groups",
+   "description": "List chart-of-accounts groups (accountNo, name, type, natureId) for classifying accounts",
+   "inputSchema": {
+    "type": "object",
+    "properties": {},
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "outputSchema": {
+    "type": "object",
+    "properties": {
+     "meta": {
+      "description": "Billy response metadata (status, paging)",
+      "type": "object",
+      "properties": {
+       "statusCode": {
+        "type": "number"
+       },
+       "success": {
+        "type": "boolean"
+       },
+       "paging": {
+        "description": "Pagination info; use `total`/`pageCount` to decide whether to page further",
+        "type": "object",
+        "properties": {
+         "page": {
+          "type": "number"
+         },
+         "pageSize": {
+          "type": "number"
+         },
+         "pageCount": {
+          "description": "Total number of pages",
+          "type": "number"
+         },
+         "total": {
+          "description": "Total number of matching records",
+          "type": "number"
+         },
+         "nextUrl": {
+          "type": "string"
+         },
+         "lastUrl": {
+          "type": "string"
+         }
+        },
+        "additionalProperties": {}
+       }
+      },
+      "additionalProperties": {}
+     },
+     "accountGroups": {
+      "description": "The accountGroups returned by Billy",
+      "type": "array",
+      "items": {
+       "type": "object",
+       "properties": {},
+       "additionalProperties": {}
+      }
+     },
+     "retrieved": {
+      "description": "Number of records actually returned after filtering",
+      "type": "number"
+     },
+     "truncated": {
+      "description": "True if the record cap was hit and results are incomplete — narrow the filters",
+      "type": "boolean"
+     }
+    },
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "additionalProperties": false
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "destructiveHint": false,
+    "openWorldHint": true
+   },
+   "execution": {
+    "taskSupport": "forbidden"
+   }
+  },
+  {
+   "name": "billy_list_accounts",
+   "title": "List accounts",
+   "description": "List the chart of accounts",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "page": {
+      "description": "Page number for pagination",
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+     },
+     "pageSize": {
+      "description": "Number of items per page (max 1000)",
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 1000
+     },
+     "sortProperty": {
+      "description": "Property to sort by",
+      "type": "string"
+     },
+     "sortDirection": {
+      "description": "Sort direction",
+      "type": "string",
+      "enum": [
+       "ASC",
+       "DESC"
+      ]
+     },
+     "isArchived": {
+      "description": "Filter by archived status",
+      "type": "boolean"
+     },
+     "systemRole": {
+      "description": "Filter by system role",
+      "type": "string"
+     }
+    },
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "outputSchema": {
+    "type": "object",
+    "properties": {
+     "meta": {
+      "description": "Billy response metadata (status, paging)",
+      "type": "object",
+      "properties": {
+       "statusCode": {
+        "type": "number"
+       },
+       "success": {
+        "type": "boolean"
+       },
+       "paging": {
+        "description": "Pagination info; use `total`/`pageCount` to decide whether to page further",
+        "type": "object",
+        "properties": {
+         "page": {
+          "type": "number"
+         },
+         "pageSize": {
+          "type": "number"
+         },
+         "pageCount": {
+          "description": "Total number of pages",
+          "type": "number"
+         },
+         "total": {
+          "description": "Total number of matching records",
+          "type": "number"
+         },
+         "nextUrl": {
+          "type": "string"
+         },
+         "lastUrl": {
+          "type": "string"
+         }
+        },
+        "additionalProperties": {}
+       }
+      },
+      "additionalProperties": {}
+     },
+     "accounts": {
+      "description": "The accounts returned by Billy",
+      "type": "array",
+      "items": {
+       "type": "object",
+       "properties": {},
+       "additionalProperties": {}
+      }
+     }
+    },
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "additionalProperties": false
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "destructiveHint": false,
+    "openWorldHint": true
+   },
+   "execution": {
+    "taskSupport": "forbidden"
+   }
+  },
+  {
+   "name": "billy_list_bank_payments",
+   "title": "List bank payments",
+   "description": "List bank payments with optional filtering and pagination",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "page": {
+      "description": "Page number for pagination",
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+     },
+     "pageSize": {
+      "description": "Number of items per page (max 1000)",
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 1000
+     },
+     "sortProperty": {
+      "description": "Property to sort by",
+      "type": "string"
+     },
+     "sortDirection": {
+      "description": "Sort direction",
+      "type": "string",
+      "enum": [
+       "ASC",
+       "DESC"
+      ]
+     },
+     "contactId": {
+      "description": "Filter by contact ID",
+      "type": "string"
+     },
+     "isVoided": {
+      "description": "Filter by voided status",
+      "type": "boolean"
+     }
+    },
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "outputSchema": {
+    "type": "object",
+    "properties": {
+     "meta": {
+      "description": "Billy response metadata (status, paging)",
+      "type": "object",
+      "properties": {
+       "statusCode": {
+        "type": "number"
+       },
+       "success": {
+        "type": "boolean"
+       },
+       "paging": {
+        "description": "Pagination info; use `total`/`pageCount` to decide whether to page further",
+        "type": "object",
+        "properties": {
+         "page": {
+          "type": "number"
+         },
+         "pageSize": {
+          "type": "number"
+         },
+         "pageCount": {
+          "description": "Total number of pages",
+          "type": "number"
+         },
+         "total": {
+          "description": "Total number of matching records",
+          "type": "number"
+         },
+         "nextUrl": {
+          "type": "string"
+         },
+         "lastUrl": {
+          "type": "string"
+         }
+        },
+        "additionalProperties": {}
+       }
+      },
+      "additionalProperties": {}
+     },
+     "bankPayments": {
+      "description": "The bankPayments returned by Billy",
+      "type": "array",
+      "items": {
+       "type": "object",
+       "properties": {},
+       "additionalProperties": {}
+      }
+     }
+    },
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "additionalProperties": false
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "destructiveHint": false,
+    "openWorldHint": true
+   },
+   "execution": {
+    "taskSupport": "forbidden"
+   }
+  },
+  {
+   "name": "billy_list_bills",
+   "title": "List bills",
+   "description": "List bills (vendor invoices) with optional filtering and pagination",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "page": {
+      "description": "Page number for pagination",
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+     },
+     "pageSize": {
+      "description": "Number of items per page (max 1000)",
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 1000
+     },
+     "sortProperty": {
+      "description": "Property to sort by",
+      "type": "string"
+     },
+     "sortDirection": {
+      "description": "Sort direction",
+      "type": "string",
+      "enum": [
+       "ASC",
+       "DESC"
+      ]
+     },
+     "fromDate": {
+      "description": "Start of the entryDate range, inclusive (YYYY-MM-DD)",
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+     },
+     "toDate": {
+      "description": "End of the entryDate range, inclusive (YYYY-MM-DD)",
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+     },
+     "contactId": {
+      "description": "Filter by contact ID",
+      "type": "string"
+     },
+     "state": {
+      "description": "Filter by bill state",
+      "type": "string",
+      "enum": [
+       "draft",
+       "approved"
+      ]
+     },
+     "isPaid": {
+      "description": "Filter by payment status",
+      "type": "boolean"
+     },
+     "include": {
+      "description": "Related resources to include",
+      "type": "string"
+     }
+    },
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "outputSchema": {
+    "type": "object",
+    "properties": {
+     "meta": {
+      "description": "Billy response metadata (status, paging)",
+      "type": "object",
+      "properties": {
+       "statusCode": {
+        "type": "number"
+       },
+       "success": {
+        "type": "boolean"
+       },
+       "paging": {
+        "description": "Pagination info; use `total`/`pageCount` to decide whether to page further",
+        "type": "object",
+        "properties": {
+         "page": {
+          "type": "number"
+         },
+         "pageSize": {
+          "type": "number"
+         },
+         "pageCount": {
+          "description": "Total number of pages",
+          "type": "number"
+         },
+         "total": {
+          "description": "Total number of matching records",
+          "type": "number"
+         },
+         "nextUrl": {
+          "type": "string"
+         },
+         "lastUrl": {
+          "type": "string"
+         }
+        },
+        "additionalProperties": {}
+       }
+      },
+      "additionalProperties": {}
+     },
+     "bills": {
+      "description": "The bills returned by Billy",
+      "type": "array",
+      "items": {
+       "type": "object",
+       "properties": {},
+       "additionalProperties": {}
+      }
+     }
+    },
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "additionalProperties": false
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "destructiveHint": false,
+    "openWorldHint": true
+   },
+   "execution": {
+    "taskSupport": "forbidden"
+   }
+  },
+  {
+   "name": "billy_list_contacts",
+   "title": "List contacts",
+   "description": "List contacts with optional filtering and pagination",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "page": {
+      "description": "Page number for pagination",
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+     },
+     "pageSize": {
+      "description": "Number of items per page (max 1000)",
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 1000
+     },
+     "sortProperty": {
+      "description": "Property to sort by",
+      "type": "string"
+     },
+     "sortDirection": {
+      "description": "Sort direction",
+      "type": "string",
+      "enum": [
+       "ASC",
+       "DESC"
+      ]
+     },
+     "isCustomer": {
+      "description": "Filter by customer status",
+      "type": "boolean"
+     },
+     "isSupplier": {
+      "description": "Filter by supplier status",
+      "type": "boolean"
+     },
+     "include": {
+      "description": "Related resources to include",
+      "type": "string"
+     }
+    },
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "outputSchema": {
+    "type": "object",
+    "properties": {
+     "meta": {
+      "description": "Billy response metadata (status, paging)",
+      "type": "object",
+      "properties": {
+       "statusCode": {
+        "type": "number"
+       },
+       "success": {
+        "type": "boolean"
+       },
+       "paging": {
+        "description": "Pagination info; use `total`/`pageCount` to decide whether to page further",
+        "type": "object",
+        "properties": {
+         "page": {
+          "type": "number"
+         },
+         "pageSize": {
+          "type": "number"
+         },
+         "pageCount": {
+          "description": "Total number of pages",
+          "type": "number"
+         },
+         "total": {
+          "description": "Total number of matching records",
+          "type": "number"
+         },
+         "nextUrl": {
+          "type": "string"
+         },
+         "lastUrl": {
+          "type": "string"
+         }
+        },
+        "additionalProperties": {}
+       }
+      },
+      "additionalProperties": {}
+     },
+     "contacts": {
+      "description": "The contacts returned by Billy",
+      "type": "array",
+      "items": {
+       "type": "object",
+       "properties": {},
+       "additionalProperties": {}
+      }
+     }
+    },
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "additionalProperties": false
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "destructiveHint": false,
+    "openWorldHint": true
+   },
+   "execution": {
+    "taskSupport": "forbidden"
+   }
+  },
+  {
+   "name": "billy_list_daybook_transactions",
+   "title": "List daybook transactions",
+   "description": "List manual journal entries (kassekladde). These bypass the normal invoice/bill flow, so they warrant individual scrutiny in a VAT audit. All pages are fetched and filtered by entryDate.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "fromDate": {
+      "description": "Start of the entryDate range, inclusive (YYYY-MM-DD)",
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+     },
+     "toDate": {
+      "description": "End of the entryDate range, inclusive (YYYY-MM-DD)",
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+     },
+     "state": {
+      "description": "Filter by transaction state",
+      "type": "string",
+      "enum": [
+       "draft",
+       "approved",
+       "voided"
+      ]
+     }
+    },
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "outputSchema": {
+    "type": "object",
+    "properties": {
+     "meta": {
+      "description": "Billy response metadata (status, paging)",
+      "type": "object",
+      "properties": {
+       "statusCode": {
+        "type": "number"
+       },
+       "success": {
+        "type": "boolean"
+       },
+       "paging": {
+        "description": "Pagination info; use `total`/`pageCount` to decide whether to page further",
+        "type": "object",
+        "properties": {
+         "page": {
+          "type": "number"
+         },
+         "pageSize": {
+          "type": "number"
+         },
+         "pageCount": {
+          "description": "Total number of pages",
+          "type": "number"
+         },
+         "total": {
+          "description": "Total number of matching records",
+          "type": "number"
+         },
+         "nextUrl": {
+          "type": "string"
+         },
+         "lastUrl": {
+          "type": "string"
+         }
+        },
+        "additionalProperties": {}
+       }
+      },
+      "additionalProperties": {}
+     },
+     "daybookTransactions": {
+      "description": "The daybookTransactions returned by Billy",
+      "type": "array",
+      "items": {
+       "type": "object",
+       "properties": {},
+       "additionalProperties": {}
+      }
+     },
+     "retrieved": {
+      "description": "Number of records actually returned after filtering",
+      "type": "number"
+     },
+     "truncated": {
+      "description": "True if the record cap was hit and results are incomplete — narrow the filters",
+      "type": "boolean"
+     }
+    },
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "additionalProperties": false
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "destructiveHint": false,
+    "openWorldHint": true
+   },
+   "execution": {
+    "taskSupport": "forbidden"
+   }
+  },
+  {
+   "name": "billy_list_invoices",
+   "title": "List invoices",
+   "description": "List invoices with optional filtering and pagination",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "page": {
+      "description": "Page number for pagination",
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+     },
+     "pageSize": {
+      "description": "Number of items per page (max 1000)",
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 1000
+     },
+     "sortProperty": {
+      "description": "Property to sort by",
+      "type": "string"
+     },
+     "sortDirection": {
+      "description": "Sort direction",
+      "type": "string",
+      "enum": [
+       "ASC",
+       "DESC"
+      ]
+     },
+     "fromDate": {
+      "description": "Start of the entryDate range, inclusive (YYYY-MM-DD)",
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+     },
+     "toDate": {
+      "description": "End of the entryDate range, inclusive (YYYY-MM-DD)",
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+     },
+     "contactId": {
+      "description": "Filter by contact ID",
+      "type": "string"
+     },
+     "state": {
+      "description": "Filter by invoice state",
+      "type": "string",
+      "enum": [
+       "draft",
+       "approved"
+      ]
+     },
+     "isPaid": {
+      "description": "Filter by payment status",
+      "type": "boolean"
+     },
+     "include": {
+      "description": "Related resources to include",
+      "type": "string"
+     }
+    },
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "outputSchema": {
+    "type": "object",
+    "properties": {
+     "meta": {
+      "description": "Billy response metadata (status, paging)",
+      "type": "object",
+      "properties": {
+       "statusCode": {
+        "type": "number"
+       },
+       "success": {
+        "type": "boolean"
+       },
+       "paging": {
+        "description": "Pagination info; use `total`/`pageCount` to decide whether to page further",
+        "type": "object",
+        "properties": {
+         "page": {
+          "type": "number"
+         },
+         "pageSize": {
+          "type": "number"
+         },
+         "pageCount": {
+          "description": "Total number of pages",
+          "type": "number"
+         },
+         "total": {
+          "description": "Total number of matching records",
+          "type": "number"
+         },
+         "nextUrl": {
+          "type": "string"
+         },
+         "lastUrl": {
+          "type": "string"
+         }
+        },
+        "additionalProperties": {}
+       }
+      },
+      "additionalProperties": {}
+     },
+     "invoices": {
+      "description": "The invoices returned by Billy",
+      "type": "array",
+      "items": {
+       "type": "object",
+       "properties": {},
+       "additionalProperties": {}
+      }
+     }
+    },
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "additionalProperties": false
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "destructiveHint": false,
+    "openWorldHint": true
+   },
+   "execution": {
+    "taskSupport": "forbidden"
+   }
+  },
+  {
+   "name": "billy_list_postings",
+   "title": "List ledger postings",
+   "description": "List ledger postings — the double-entry lines where VAT actually lands. Each posting has entryDate, accountId, amount, side (debit/credit), taxRateId and salesTaxReturnId. This is the ground truth for VAT figures, ahead of invoice or bill totals. All matching pages are fetched; check `truncated` before trusting a total.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "fromDate": {
+      "description": "Start of the entryDate range, inclusive (YYYY-MM-DD)",
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+     },
+     "toDate": {
+      "description": "End of the entryDate range, inclusive (YYYY-MM-DD)",
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+     },
+     "accountId": {
+      "description": "Filter by account ID",
+      "type": "string"
+     },
+     "taxRateId": {
+      "description": "Filter by tax rate ID",
+      "type": "string"
+     },
+     "salesTaxReturnId": {
+      "description": "Filter by the VAT return the posting belongs to",
+      "type": "string"
+     }
+    },
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "outputSchema": {
+    "type": "object",
+    "properties": {
+     "meta": {
+      "description": "Billy response metadata (status, paging)",
+      "type": "object",
+      "properties": {
+       "statusCode": {
+        "type": "number"
+       },
+       "success": {
+        "type": "boolean"
+       },
+       "paging": {
+        "description": "Pagination info; use `total`/`pageCount` to decide whether to page further",
+        "type": "object",
+        "properties": {
+         "page": {
+          "type": "number"
+         },
+         "pageSize": {
+          "type": "number"
+         },
+         "pageCount": {
+          "description": "Total number of pages",
+          "type": "number"
+         },
+         "total": {
+          "description": "Total number of matching records",
+          "type": "number"
+         },
+         "nextUrl": {
+          "type": "string"
+         },
+         "lastUrl": {
+          "type": "string"
+         }
+        },
+        "additionalProperties": {}
+       }
+      },
+      "additionalProperties": {}
+     },
+     "postings": {
+      "description": "The postings returned by Billy",
+      "type": "array",
+      "items": {
+       "type": "object",
+       "properties": {},
+       "additionalProperties": {}
+      }
+     },
+     "retrieved": {
+      "description": "Number of records actually returned after filtering",
+      "type": "number"
+     },
+     "truncated": {
+      "description": "True if the record cap was hit and results are incomplete — narrow the filters",
+      "type": "boolean"
+     }
+    },
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "additionalProperties": false
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "destructiveHint": false,
+    "openWorldHint": true
+   },
+   "execution": {
+    "taskSupport": "forbidden"
+   }
+  },
+  {
+   "name": "billy_list_products",
+   "title": "List products",
+   "description": "List products with optional filtering and pagination",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "page": {
+      "description": "Page number for pagination",
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+     },
+     "pageSize": {
+      "description": "Number of items per page (max 1000)",
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 1000
+     },
+     "sortProperty": {
+      "description": "Property to sort by",
+      "type": "string"
+     },
+     "sortDirection": {
+      "description": "Sort direction",
+      "type": "string",
+      "enum": [
+       "ASC",
+       "DESC"
+      ]
+     },
+     "isArchived": {
+      "description": "Filter by archived status",
+      "type": "boolean"
+     },
+     "include": {
+      "description": "Related resources to include",
+      "type": "string"
+     }
+    },
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "outputSchema": {
+    "type": "object",
+    "properties": {
+     "meta": {
+      "description": "Billy response metadata (status, paging)",
+      "type": "object",
+      "properties": {
+       "statusCode": {
+        "type": "number"
+       },
+       "success": {
+        "type": "boolean"
+       },
+       "paging": {
+        "description": "Pagination info; use `total`/`pageCount` to decide whether to page further",
+        "type": "object",
+        "properties": {
+         "page": {
+          "type": "number"
+         },
+         "pageSize": {
+          "type": "number"
+         },
+         "pageCount": {
+          "description": "Total number of pages",
+          "type": "number"
+         },
+         "total": {
+          "description": "Total number of matching records",
+          "type": "number"
+         },
+         "nextUrl": {
+          "type": "string"
+         },
+         "lastUrl": {
+          "type": "string"
+         }
+        },
+        "additionalProperties": {}
+       }
+      },
+      "additionalProperties": {}
+     },
+     "products": {
+      "description": "The products returned by Billy",
+      "type": "array",
+      "items": {
+       "type": "object",
+       "properties": {},
+       "additionalProperties": {}
+      }
+     }
+    },
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "additionalProperties": false
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "destructiveHint": false,
+    "openWorldHint": true
+   },
+   "execution": {
+    "taskSupport": "forbidden"
+   }
+  },
+  {
+   "name": "billy_list_sales_tax_returns",
+   "title": "List VAT returns",
+   "description": "List Billy's own VAT returns (momsangivelser) — the authoritative figures for a period. Each has periodType (quarter/halfYear/year), startDate, endDate, reportDeadline, isSettled and isPaid. Use this as the baseline before recomputing anything. Returns every return, filtered by period overlap.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "fromDate": {
+      "description": "Start of the entryDate range, inclusive (YYYY-MM-DD)",
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+     },
+     "toDate": {
+      "description": "End of the entryDate range, inclusive (YYYY-MM-DD)",
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+     }
+    },
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "outputSchema": {
+    "type": "object",
+    "properties": {
+     "meta": {
+      "description": "Billy response metadata (status, paging)",
+      "type": "object",
+      "properties": {
+       "statusCode": {
+        "type": "number"
+       },
+       "success": {
+        "type": "boolean"
+       },
+       "paging": {
+        "description": "Pagination info; use `total`/`pageCount` to decide whether to page further",
+        "type": "object",
+        "properties": {
+         "page": {
+          "type": "number"
+         },
+         "pageSize": {
+          "type": "number"
+         },
+         "pageCount": {
+          "description": "Total number of pages",
+          "type": "number"
+         },
+         "total": {
+          "description": "Total number of matching records",
+          "type": "number"
+         },
+         "nextUrl": {
+          "type": "string"
+         },
+         "lastUrl": {
+          "type": "string"
+         }
+        },
+        "additionalProperties": {}
+       }
+      },
+      "additionalProperties": {}
+     },
+     "salesTaxReturns": {
+      "description": "The salesTaxReturns returned by Billy",
+      "type": "array",
+      "items": {
+       "type": "object",
+       "properties": {},
+       "additionalProperties": {}
+      }
+     },
+     "retrieved": {
+      "description": "Number of records actually returned after filtering",
+      "type": "number"
+     },
+     "truncated": {
+      "description": "True if the record cap was hit and results are incomplete — narrow the filters",
+      "type": "boolean"
+     }
+    },
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "additionalProperties": false
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "destructiveHint": false,
+    "openWorldHint": true
+   },
+   "execution": {
+    "taskSupport": "forbidden"
+   }
+  },
+  {
+   "name": "billy_list_tax_rates",
+   "title": "List tax rates",
+   "description": "List the configured VAT/tax rates, including rate, name, abbreviation and predefinedTag (e.g. 's_dk_non_eu_goods'), plus whether each applies to sales or purchases. Use this to interpret the taxRateId on postings and invoice lines.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "appliesToSales": {
+      "description": "Only rates usable on sales",
+      "type": "boolean"
+     },
+     "appliesToPurchases": {
+      "description": "Only rates usable on purchases",
+      "type": "boolean"
+     },
+     "isActive": {
+      "description": "Filter by active status",
+      "type": "boolean"
+     }
+    },
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "outputSchema": {
+    "type": "object",
+    "properties": {
+     "meta": {
+      "description": "Billy response metadata (status, paging)",
+      "type": "object",
+      "properties": {
+       "statusCode": {
+        "type": "number"
+       },
+       "success": {
+        "type": "boolean"
+       },
+       "paging": {
+        "description": "Pagination info; use `total`/`pageCount` to decide whether to page further",
+        "type": "object",
+        "properties": {
+         "page": {
+          "type": "number"
+         },
+         "pageSize": {
+          "type": "number"
+         },
+         "pageCount": {
+          "description": "Total number of pages",
+          "type": "number"
+         },
+         "total": {
+          "description": "Total number of matching records",
+          "type": "number"
+         },
+         "nextUrl": {
+          "type": "string"
+         },
+         "lastUrl": {
+          "type": "string"
+         }
+        },
+        "additionalProperties": {}
+       }
+      },
+      "additionalProperties": {}
+     },
+     "taxRates": {
+      "description": "The taxRates returned by Billy",
+      "type": "array",
+      "items": {
+       "type": "object",
+       "properties": {},
+       "additionalProperties": {}
+      }
+     },
+     "retrieved": {
+      "description": "Number of records actually returned after filtering",
+      "type": "number"
+     },
+     "truncated": {
+      "description": "True if the record cap was hit and results are incomplete — narrow the filters",
+      "type": "boolean"
+     }
+    },
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "additionalProperties": false
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "destructiveHint": false,
+    "openWorldHint": true
+   },
+   "execution": {
+    "taskSupport": "forbidden"
+   }
+  }
+ ],
+ "writes": [
+  {
+   "name": "billy_create_bill",
+   "title": "Create bill",
+   "description": "Create a bill (vendor invoice) in Billy. Line fields follow Billy's bill resource; unknown line fields are passed through unchanged.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "dryRun": {
+      "default": true,
+      "description": "Default true: return the exact request without sending it. Set false only after the dry run was reviewed.",
+      "type": "boolean"
+     },
+     "contactId": {
+      "type": "string",
+      "description": "Supplier contact ID"
+     },
+     "entryDate": {
+      "type": "string",
+      "description": "Bill date (YYYY-MM-DD)"
+     },
+     "currencyId": {
+      "type": "string",
+      "description": "Currency ID (e.g. 'DKK', 'USD')"
+     },
+     "paymentTermsDays": {
+      "description": "Payment terms in days",
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+     },
+     "suppliersInvoiceNo": {
+      "description": "The supplier's own invoice number",
+      "type": "string"
+     },
+     "state": {
+      "description": "Bill state",
+      "type": "string",
+      "enum": [
+       "draft",
+       "approved"
+      ]
+     },
+     "lines": {
+      "minItems": 1,
+      "type": "array",
+      "items": {
+       "type": "object",
+       "properties": {
+        "accountId": {
+         "description": "Expense account ID",
+         "type": "string"
+        },
+        "description": {
+         "description": "Line description",
+         "type": "string"
+        },
+        "amount": {
+         "description": "Line amount",
+         "type": "number"
+        },
+        "quantity": {
+         "description": "Quantity",
+         "type": "number"
+        },
+        "taxRateId": {
+         "description": "Tax rate ID",
+         "type": "string"
+        }
+       },
+       "additionalProperties": {}
+      },
+      "description": "Bill lines (at least one)"
+     }
+    },
+    "required": [
+     "contactId",
+     "entryDate",
+     "currencyId",
+     "lines"
+    ],
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "outputSchema": {
+    "type": "object",
+    "properties": {
+     "meta": {
+      "description": "Billy response metadata (status, paging)",
+      "type": "object",
+      "properties": {
+       "statusCode": {
+        "type": "number"
+       },
+       "success": {
+        "type": "boolean"
+       },
+       "paging": {
+        "description": "Pagination info; use `total`/`pageCount` to decide whether to page further",
+        "type": "object",
+        "properties": {
+         "page": {
+          "type": "number"
+         },
+         "pageSize": {
+          "type": "number"
+         },
+         "pageCount": {
+          "description": "Total number of pages",
+          "type": "number"
+         },
+         "total": {
+          "description": "Total number of matching records",
+          "type": "number"
+         },
+         "nextUrl": {
+          "type": "string"
+         },
+         "lastUrl": {
+          "type": "string"
+         }
+        },
+        "additionalProperties": {}
+       }
+      },
+      "additionalProperties": {}
+     },
+     "bills": {
+      "description": "The bills returned by Billy",
+      "type": "array",
+      "items": {
+       "type": "object",
+       "properties": {},
+       "additionalProperties": {}
+      }
+     },
+     "dryRun": {
+      "description": "True when nothing was sent to Billy",
+      "type": "boolean"
+     },
+     "request": {
+      "description": "The request that would be sent (dry run only)",
+      "type": "object",
+      "properties": {},
+      "additionalProperties": {}
+     },
+     "preview": {
+      "description": "Human-readable summary of the change, where the tool provides one",
+      "type": "object",
+      "properties": {},
+      "additionalProperties": {}
+     }
+    },
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "additionalProperties": false
+   },
+   "annotations": {
+    "readOnlyHint": false,
+    "destructiveHint": false,
+    "idempotentHint": false,
+    "openWorldHint": true
+   },
+   "execution": {
+    "taskSupport": "forbidden"
+   }
+  },
+  {
+   "name": "billy_create_contact",
+   "title": "Create contact",
+   "description": "Create a new contact in Billy",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "dryRun": {
+      "default": true,
+      "description": "Default true: return the exact request without sending it. Set false only after the dry run was reviewed.",
+      "type": "boolean"
+     },
+     "name": {
+      "type": "string",
+      "description": "Contact name"
+     },
+     "street": {
+      "description": "Street address",
+      "type": "string"
+     },
+     "city": {
+      "description": "City",
+      "type": "string"
+     },
+     "zipcode": {
+      "description": "Zipcode",
+      "type": "string"
+     },
+     "countryId": {
+      "type": "string",
+      "description": "Country ID (e.g. 'DK', 'US')"
+     },
+     "phone": {
+      "description": "Phone number",
+      "type": "string"
+     },
+     "email": {
+      "description": "Email address",
+      "type": "string"
+     },
+     "registrationNo": {
+      "description": "VAT/CVR/Tax ID number",
+      "type": "string"
+     },
+     "isCustomer": {
+      "description": "Whether contact is a customer",
+      "type": "boolean"
+     },
+     "isSupplier": {
+      "description": "Whether contact is a supplier",
+      "type": "boolean"
+     },
+     "paymentTermsDays": {
+      "description": "Payment terms in days",
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+     },
+     "type": {
+      "description": "Contact type",
+      "type": "string",
+      "enum": [
+       "company",
+       "person"
+      ]
+     }
+    },
+    "required": [
+     "name",
+     "countryId"
+    ],
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "outputSchema": {
+    "type": "object",
+    "properties": {
+     "meta": {
+      "description": "Billy response metadata (status, paging)",
+      "type": "object",
+      "properties": {
+       "statusCode": {
+        "type": "number"
+       },
+       "success": {
+        "type": "boolean"
+       },
+       "paging": {
+        "description": "Pagination info; use `total`/`pageCount` to decide whether to page further",
+        "type": "object",
+        "properties": {
+         "page": {
+          "type": "number"
+         },
+         "pageSize": {
+          "type": "number"
+         },
+         "pageCount": {
+          "description": "Total number of pages",
+          "type": "number"
+         },
+         "total": {
+          "description": "Total number of matching records",
+          "type": "number"
+         },
+         "nextUrl": {
+          "type": "string"
+         },
+         "lastUrl": {
+          "type": "string"
+         }
+        },
+        "additionalProperties": {}
+       }
+      },
+      "additionalProperties": {}
+     },
+     "contacts": {
+      "description": "The contacts returned by Billy",
+      "type": "array",
+      "items": {
+       "type": "object",
+       "properties": {},
+       "additionalProperties": {}
+      }
+     },
+     "dryRun": {
+      "description": "True when nothing was sent to Billy",
+      "type": "boolean"
+     },
+     "request": {
+      "description": "The request that would be sent (dry run only)",
+      "type": "object",
+      "properties": {},
+      "additionalProperties": {}
+     },
+     "preview": {
+      "description": "Human-readable summary of the change, where the tool provides one",
+      "type": "object",
+      "properties": {},
+      "additionalProperties": {}
+     }
+    },
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "additionalProperties": false
+   },
+   "annotations": {
+    "readOnlyHint": false,
+    "destructiveHint": false,
+    "idempotentHint": false,
+    "openWorldHint": true
+   },
+   "execution": {
+    "taskSupport": "forbidden"
+   }
+  },
+  {
+   "name": "billy_create_daybook_transaction",
+   "title": "Create journal entry",
+   "description": "Create a manual journal entry (kassekladde) for postings that have no invoice or bill behind them: reclassifications, accruals, dividend and equity entries. Accounts may be given by number. The entry must balance. Dry-runs by default, and creates a DRAFT unless state is 'approved', so nothing reaches the ledger until someone approves it in Billy. Not for bank lines: match those in Billy's bank reconciliation.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "dryRun": {
+      "default": true,
+      "description": "Default true: return the exact request without sending it. Set false only after the dry run was reviewed.",
+      "type": "boolean"
+     },
+     "entryDate": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+      "description": "Entry date (YYYY-MM-DD)"
+     },
+     "description": {
+      "description": "Entry description",
+      "type": "string"
+     },
+     "voucherNo": {
+      "description": "Voucher number",
+      "type": "string"
+     },
+     "daybookId": {
+      "description": "Daybook ID; defaults to the organisation's only daybook",
+      "type": "string"
+     },
+     "currencyId": {
+      "description": "Currency; defaults to the organisation's base currency",
+      "type": "string"
+     },
+     "state": {
+      "default": "draft",
+      "description": "Default draft; approve in Billy after review",
+      "type": "string",
+      "enum": [
+       "draft",
+       "approved"
+      ]
+     },
+     "lines": {
+      "minItems": 1,
+      "type": "array",
+      "items": {
+       "type": "object",
+       "properties": {
+        "account": {
+         "type": "string",
+         "description": "Account number (e.g. '7161') or account ID"
+        },
+        "side": {
+         "type": "string",
+         "enum": [
+          "debit",
+          "credit"
+         ],
+         "description": "Side this line posts to on `account`"
+        },
+        "amount": {
+         "type": "number",
+         "exclusiveMinimum": 0,
+         "description": "Amount; VAT-inclusive when taxRateId is set (Billy splits the VAT off)"
+        },
+        "text": {
+         "description": "Line text",
+         "type": "string"
+        },
+        "taxRateId": {
+         "description": "Tax rate ID; omit for no VAT",
+         "type": "string"
+        },
+        "contraAccount": {
+         "description": "Account number or ID for the opposite side. Makes the line balance on its own",
+         "type": "string"
+        }
+       },
+       "required": [
+        "account",
+        "side",
+        "amount"
+       ]
+      },
+      "description": "Entry lines"
+     }
+    },
+    "required": [
+     "entryDate",
+     "lines"
+    ],
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "outputSchema": {
+    "type": "object",
+    "properties": {
+     "meta": {
+      "description": "Billy response metadata (status, paging)",
+      "type": "object",
+      "properties": {
+       "statusCode": {
+        "type": "number"
+       },
+       "success": {
+        "type": "boolean"
+       },
+       "paging": {
+        "description": "Pagination info; use `total`/`pageCount` to decide whether to page further",
+        "type": "object",
+        "properties": {
+         "page": {
+          "type": "number"
+         },
+         "pageSize": {
+          "type": "number"
+         },
+         "pageCount": {
+          "description": "Total number of pages",
+          "type": "number"
+         },
+         "total": {
+          "description": "Total number of matching records",
+          "type": "number"
+         },
+         "nextUrl": {
+          "type": "string"
+         },
+         "lastUrl": {
+          "type": "string"
+         }
+        },
+        "additionalProperties": {}
+       }
+      },
+      "additionalProperties": {}
+     },
+     "daybookTransactions": {
+      "description": "The daybookTransactions returned by Billy",
+      "type": "array",
+      "items": {
+       "type": "object",
+       "properties": {},
+       "additionalProperties": {}
+      }
+     },
+     "dryRun": {
+      "description": "True when nothing was sent to Billy",
+      "type": "boolean"
+     },
+     "request": {
+      "description": "The request that would be sent (dry run only)",
+      "type": "object",
+      "properties": {},
+      "additionalProperties": {}
+     },
+     "preview": {
+      "description": "Human-readable summary of the change, where the tool provides one",
+      "type": "object",
+      "properties": {},
+      "additionalProperties": {}
+     }
+    },
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "additionalProperties": false
+   },
+   "annotations": {
+    "readOnlyHint": false,
+    "destructiveHint": false,
+    "idempotentHint": false,
+    "openWorldHint": true
+   },
+   "execution": {
+    "taskSupport": "forbidden"
+   }
+  },
+  {
+   "name": "billy_create_invoice",
+   "title": "Create invoice",
+   "description": "Create a new invoice in Billy",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "dryRun": {
+      "default": true,
+      "description": "Default true: return the exact request without sending it. Set false only after the dry run was reviewed.",
+      "type": "boolean"
+     },
+     "contactId": {
+      "type": "string",
+      "description": "Contact ID"
+     },
+     "entryDate": {
+      "type": "string",
+      "description": "Invoice date (YYYY-MM-DD)"
+     },
+     "currencyId": {
+      "type": "string",
+      "description": "Currency ID (e.g. 'DKK', 'USD')"
+     },
+     "invoiceNo": {
+      "description": "Invoice number (auto-generated by Billy if omitted)",
+      "type": "string"
+     },
+     "paymentTermsDays": {
+      "description": "Payment terms in days (inherited from the contact if omitted)",
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+     },
+     "contactMessage": {
+      "description": "Message to display on invoice",
+      "type": "string"
+     },
+     "state": {
+      "description": "Invoice state",
+      "type": "string",
+      "enum": [
+       "draft",
+       "approved"
+      ]
+     },
+     "lines": {
+      "minItems": 1,
+      "type": "array",
+      "items": {
+       "type": "object",
+       "properties": {
+        "productId": {
+         "type": "string",
+         "description": "Product ID"
+        },
+        "description": {
+         "description": "Line description",
+         "type": "string"
+        },
+        "quantity": {
+         "default": 1,
+         "description": "Quantity",
+         "type": "number"
+        },
+        "unitPrice": {
+         "type": "number",
+         "description": "Unit price"
+        }
+       },
+       "required": [
+        "productId",
+        "unitPrice"
+       ]
+      },
+      "description": "Invoice lines (at least one)"
+     }
+    },
+    "required": [
+     "contactId",
+     "entryDate",
+     "currencyId",
+     "lines"
+    ],
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "outputSchema": {
+    "type": "object",
+    "properties": {
+     "meta": {
+      "description": "Billy response metadata (status, paging)",
+      "type": "object",
+      "properties": {
+       "statusCode": {
+        "type": "number"
+       },
+       "success": {
+        "type": "boolean"
+       },
+       "paging": {
+        "description": "Pagination info; use `total`/`pageCount` to decide whether to page further",
+        "type": "object",
+        "properties": {
+         "page": {
+          "type": "number"
+         },
+         "pageSize": {
+          "type": "number"
+         },
+         "pageCount": {
+          "description": "Total number of pages",
+          "type": "number"
+         },
+         "total": {
+          "description": "Total number of matching records",
+          "type": "number"
+         },
+         "nextUrl": {
+          "type": "string"
+         },
+         "lastUrl": {
+          "type": "string"
+         }
+        },
+        "additionalProperties": {}
+       }
+      },
+      "additionalProperties": {}
+     },
+     "invoices": {
+      "description": "The invoices returned by Billy",
+      "type": "array",
+      "items": {
+       "type": "object",
+       "properties": {},
+       "additionalProperties": {}
+      }
+     },
+     "dryRun": {
+      "description": "True when nothing was sent to Billy",
+      "type": "boolean"
+     },
+     "request": {
+      "description": "The request that would be sent (dry run only)",
+      "type": "object",
+      "properties": {},
+      "additionalProperties": {}
+     },
+     "preview": {
+      "description": "Human-readable summary of the change, where the tool provides one",
+      "type": "object",
+      "properties": {},
+      "additionalProperties": {}
+     }
+    },
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "additionalProperties": false
+   },
+   "annotations": {
+    "readOnlyHint": false,
+    "destructiveHint": false,
+    "idempotentHint": false,
+    "openWorldHint": true
+   },
+   "execution": {
+    "taskSupport": "forbidden"
+   }
+  },
+  {
+   "name": "billy_create_payment",
+   "title": "Create payment",
+   "description": "Create a payment to mark invoices or bills as paid",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "dryRun": {
+      "default": true,
+      "description": "Default true: return the exact request without sending it. Set false only after the dry run was reviewed.",
+      "type": "boolean"
+     },
+     "entryDate": {
+      "type": "string",
+      "description": "Payment date (YYYY-MM-DD)"
+     },
+     "cashAmount": {
+      "type": "number",
+      "description": "Payment amount"
+     },
+     "cashSide": {
+      "type": "string",
+      "enum": [
+       "debit",
+       "credit"
+      ],
+      "description": "debit for invoice payments, credit for bill payments"
+     },
+     "cashAccountId": {
+      "type": "string",
+      "description": "Bank account ID where money was deposited/withdrawn"
+     },
+     "associations": {
+      "minItems": 1,
+      "type": "array",
+      "items": {
+       "type": "object",
+       "properties": {
+        "subjectReference": {
+         "type": "string",
+         "description": "Reference like 'invoice:invoiceId' or 'bill:billId'"
+        }
+       },
+       "required": [
+        "subjectReference"
+       ]
+      },
+      "description": "Invoice/bill references to pay"
+     },
+     "feeAmount": {
+      "description": "Bank/payment fee amount",
+      "type": "number"
+     },
+     "feeAccountId": {
+      "description": "Expense account ID for fees",
+      "type": "string"
+     }
+    },
+    "required": [
+     "entryDate",
+     "cashAmount",
+     "cashSide",
+     "cashAccountId",
+     "associations"
+    ],
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "outputSchema": {
+    "type": "object",
+    "properties": {
+     "meta": {
+      "description": "Billy response metadata (status, paging)",
+      "type": "object",
+      "properties": {
+       "statusCode": {
+        "type": "number"
+       },
+       "success": {
+        "type": "boolean"
+       },
+       "paging": {
+        "description": "Pagination info; use `total`/`pageCount` to decide whether to page further",
+        "type": "object",
+        "properties": {
+         "page": {
+          "type": "number"
+         },
+         "pageSize": {
+          "type": "number"
+         },
+         "pageCount": {
+          "description": "Total number of pages",
+          "type": "number"
+         },
+         "total": {
+          "description": "Total number of matching records",
+          "type": "number"
+         },
+         "nextUrl": {
+          "type": "string"
+         },
+         "lastUrl": {
+          "type": "string"
+         }
+        },
+        "additionalProperties": {}
+       }
+      },
+      "additionalProperties": {}
+     },
+     "bankPayments": {
+      "description": "The bankPayments returned by Billy",
+      "type": "array",
+      "items": {
+       "type": "object",
+       "properties": {},
+       "additionalProperties": {}
+      }
+     },
+     "dryRun": {
+      "description": "True when nothing was sent to Billy",
+      "type": "boolean"
+     },
+     "request": {
+      "description": "The request that would be sent (dry run only)",
+      "type": "object",
+      "properties": {},
+      "additionalProperties": {}
+     },
+     "preview": {
+      "description": "Human-readable summary of the change, where the tool provides one",
+      "type": "object",
+      "properties": {},
+      "additionalProperties": {}
+     }
+    },
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "additionalProperties": false
+   },
+   "annotations": {
+    "readOnlyHint": false,
+    "destructiveHint": false,
+    "idempotentHint": false,
+    "openWorldHint": true
+   },
+   "execution": {
+    "taskSupport": "forbidden"
+   }
+  },
+  {
+   "name": "billy_create_product",
+   "title": "Create product",
+   "description": "Create a new product in Billy",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "dryRun": {
+      "default": true,
+      "description": "Default true: return the exact request without sending it. Set false only after the dry run was reviewed.",
+      "type": "boolean"
+     },
+     "name": {
+      "type": "string",
+      "description": "Product name"
+     },
+     "description": {
+      "description": "Product description",
+      "type": "string"
+     },
+     "productNo": {
+      "description": "Product number/SKU",
+      "type": "string"
+     },
+     "accountId": {
+      "description": "Revenue account ID",
+      "type": "string"
+     },
+     "salesTaxRulesetId": {
+      "description": "Sales tax ruleset ID",
+      "type": "string"
+     },
+     "prices": {
+      "description": "Product prices for different currencies",
+      "type": "array",
+      "items": {
+       "type": "object",
+       "properties": {
+        "unitPrice": {
+         "type": "number",
+         "description": "Unit price"
+        },
+        "currencyId": {
+         "type": "string",
+         "description": "Currency ID"
+        }
+       },
+       "required": [
+        "unitPrice",
+        "currencyId"
+       ]
+      }
+     }
+    },
+    "required": [
+     "name"
+    ],
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "outputSchema": {
+    "type": "object",
+    "properties": {
+     "meta": {
+      "description": "Billy response metadata (status, paging)",
+      "type": "object",
+      "properties": {
+       "statusCode": {
+        "type": "number"
+       },
+       "success": {
+        "type": "boolean"
+       },
+       "paging": {
+        "description": "Pagination info; use `total`/`pageCount` to decide whether to page further",
+        "type": "object",
+        "properties": {
+         "page": {
+          "type": "number"
+         },
+         "pageSize": {
+          "type": "number"
+         },
+         "pageCount": {
+          "description": "Total number of pages",
+          "type": "number"
+         },
+         "total": {
+          "description": "Total number of matching records",
+          "type": "number"
+         },
+         "nextUrl": {
+          "type": "string"
+         },
+         "lastUrl": {
+          "type": "string"
+         }
+        },
+        "additionalProperties": {}
+       }
+      },
+      "additionalProperties": {}
+     },
+     "products": {
+      "description": "The products returned by Billy",
+      "type": "array",
+      "items": {
+       "type": "object",
+       "properties": {},
+       "additionalProperties": {}
+      }
+     },
+     "dryRun": {
+      "description": "True when nothing was sent to Billy",
+      "type": "boolean"
+     },
+     "request": {
+      "description": "The request that would be sent (dry run only)",
+      "type": "object",
+      "properties": {},
+      "additionalProperties": {}
+     },
+     "preview": {
+      "description": "Human-readable summary of the change, where the tool provides one",
+      "type": "object",
+      "properties": {},
+      "additionalProperties": {}
+     }
+    },
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "additionalProperties": false
+   },
+   "annotations": {
+    "readOnlyHint": false,
+    "destructiveHint": false,
+    "idempotentHint": false,
+    "openWorldHint": true
+   },
+   "execution": {
+    "taskSupport": "forbidden"
+   }
+  },
+  {
+   "name": "billy_delete_daybook_transaction",
+   "title": "Delete draft journal entry",
+   "description": "Delete a DRAFT journal entry. Approved entries are refused: void those in Billy so the audit trail stays. Dry-runs by default.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "dryRun": {
+      "default": true,
+      "description": "Default true: return the exact request without sending it. Set false only after the dry run was reviewed.",
+      "type": "boolean"
+     },
+     "id": {
+      "type": "string",
+      "description": "Daybook transaction ID"
+     }
+    },
+    "required": [
+     "id"
+    ],
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "outputSchema": {
+    "type": "object",
+    "properties": {
+     "meta": {
+      "description": "Billy response metadata (status, paging)",
+      "type": "object",
+      "properties": {
+       "statusCode": {
+        "type": "number"
+       },
+       "success": {
+        "type": "boolean"
+       },
+       "paging": {
+        "description": "Pagination info; use `total`/`pageCount` to decide whether to page further",
+        "type": "object",
+        "properties": {
+         "page": {
+          "type": "number"
+         },
+         "pageSize": {
+          "type": "number"
+         },
+         "pageCount": {
+          "description": "Total number of pages",
+          "type": "number"
+         },
+         "total": {
+          "description": "Total number of matching records",
+          "type": "number"
+         },
+         "nextUrl": {
+          "type": "string"
+         },
+         "lastUrl": {
+          "type": "string"
+         }
+        },
+        "additionalProperties": {}
+       }
+      },
+      "additionalProperties": {}
+     },
+     "daybookTransactions": {
+      "description": "The daybookTransactions returned by Billy",
+      "type": "array",
+      "items": {
+       "type": "object",
+       "properties": {},
+       "additionalProperties": {}
+      }
+     },
+     "dryRun": {
+      "description": "True when nothing was sent to Billy",
+      "type": "boolean"
+     },
+     "request": {
+      "description": "The request that would be sent (dry run only)",
+      "type": "object",
+      "properties": {},
+      "additionalProperties": {}
+     },
+     "preview": {
+      "description": "Human-readable summary of the change, where the tool provides one",
+      "type": "object",
+      "properties": {},
+      "additionalProperties": {}
+     }
+    },
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "additionalProperties": false
+   },
+   "annotations": {
+    "readOnlyHint": false,
+    "destructiveHint": true,
+    "idempotentHint": true,
+    "openWorldHint": true
+   },
+   "execution": {
+    "taskSupport": "forbidden"
+   }
+  },
+  {
+   "name": "billy_get_contact",
+   "title": "Get contact",
+   "description": "Get a specific contact by ID",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "type": "string",
+      "description": "Contact ID"
+     },
+     "include": {
+      "description": "Related resources to include (e.g. 'contact.contactPersons')",
+      "type": "string"
+     }
+    },
+    "required": [
+     "id"
+    ],
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "outputSchema": {
+    "type": "object",
+    "properties": {
+     "meta": {
+      "description": "Billy response metadata (status, paging)",
+      "type": "object",
+      "properties": {
+       "statusCode": {
+        "type": "number"
+       },
+       "success": {
+        "type": "boolean"
+       },
+       "paging": {
+        "description": "Pagination info; use `total`/`pageCount` to decide whether to page further",
+        "type": "object",
+        "properties": {
+         "page": {
+          "type": "number"
+         },
+         "pageSize": {
+          "type": "number"
+         },
+         "pageCount": {
+          "description": "Total number of pages",
+          "type": "number"
+         },
+         "total": {
+          "description": "Total number of matching records",
+          "type": "number"
+         },
+         "nextUrl": {
+          "type": "string"
+         },
+         "lastUrl": {
+          "type": "string"
+         }
+        },
+        "additionalProperties": {}
+       }
+      },
+      "additionalProperties": {}
+     },
+     "contact": {
+      "description": "The contact returned by Billy",
+      "type": "object",
+      "properties": {},
+      "additionalProperties": {}
+     },
+     "contactPersons": {
+      "description": "Related contactPersons, present when requested via `include`",
+      "type": "array",
+      "items": {
+       "type": "object",
+       "properties": {},
+       "additionalProperties": {}
+      }
+     }
+    },
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "additionalProperties": false
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "destructiveHint": false,
+    "openWorldHint": true
+   },
+   "execution": {
+    "taskSupport": "forbidden"
+   }
+  },
+  {
+   "name": "billy_get_invoice",
+   "title": "Get invoice",
+   "description": "Get a specific invoice by ID",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "type": "string",
+      "description": "Invoice ID"
+     },
+     "include": {
+      "description": "Related resources to include (e.g. 'invoice.lines,invoice.contact')",
+      "type": "string"
+     }
+    },
+    "required": [
+     "id"
+    ],
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "outputSchema": {
+    "type": "object",
+    "properties": {
+     "meta": {
+      "description": "Billy response metadata (status, paging)",
+      "type": "object",
+      "properties": {
+       "statusCode": {
+        "type": "number"
+       },
+       "success": {
+        "type": "boolean"
+       },
+       "paging": {
+        "description": "Pagination info; use `total`/`pageCount` to decide whether to page further",
+        "type": "object",
+        "properties": {
+         "page": {
+          "type": "number"
+         },
+         "pageSize": {
+          "type": "number"
+         },
+         "pageCount": {
+          "description": "Total number of pages",
+          "type": "number"
+         },
+         "total": {
+          "description": "Total number of matching records",
+          "type": "number"
+         },
+         "nextUrl": {
+          "type": "string"
+         },
+         "lastUrl": {
+          "type": "string"
+         }
+        },
+        "additionalProperties": {}
+       }
+      },
+      "additionalProperties": {}
+     },
+     "invoice": {
+      "description": "The invoice returned by Billy",
+      "type": "object",
+      "properties": {},
+      "additionalProperties": {}
+     },
+     "invoiceLines": {
+      "description": "Related invoiceLines, present when requested via `include`",
+      "type": "array",
+      "items": {
+       "type": "object",
+       "properties": {},
+       "additionalProperties": {}
+      }
+     }
+    },
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "additionalProperties": false
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "destructiveHint": false,
+    "openWorldHint": true
+   },
+   "execution": {
+    "taskSupport": "forbidden"
+   }
+  },
+  {
+   "name": "billy_get_organization",
+   "title": "Get organization",
+   "description": "Get organization details from Billy",
+   "inputSchema": {
+    "type": "object",
+    "properties": {},
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "outputSchema": {
+    "type": "object",
+    "properties": {
+     "meta": {
+      "description": "Billy response metadata (status, paging)",
+      "type": "object",
+      "properties": {
+       "statusCode": {
+        "type": "number"
+       },
+       "success": {
+        "type": "boolean"
+       },
+       "paging": {
+        "description": "Pagination info; use `total`/`pageCount` to decide whether to page further",
+        "type": "object",
+        "properties": {
+         "page": {
+          "type": "number"
+         },
+         "pageSize": {
+          "type": "number"
+         },
+         "pageCount": {
+          "description": "Total number of pages",
+          "type": "number"
+         },
+         "total": {
+          "description": "Total number of matching records",
+          "type": "number"
+         },
+         "nextUrl": {
+          "type": "string"
+         },
+         "lastUrl": {
+          "type": "string"
+         }
+        },
+        "additionalProperties": {}
+       }
+      },
+      "additionalProperties": {}
+     },
+     "organization": {
+      "description": "The organization returned by Billy",
+      "type": "object",
+      "properties": {},
+      "additionalProperties": {}
+     }
+    },
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "additionalProperties": false
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "destructiveHint": false,
+    "openWorldHint": true
+   },
+   "execution": {
+    "taskSupport": "forbidden"
+   }
+  },
+  {
+   "name": "billy_get_product",
+   "title": "Get product",
+   "description": "Get a specific product by ID",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "type": "string",
+      "description": "Product ID"
+     },
+     "include": {
+      "description": "Related resources to include (e.g. 'product.prices')",
+      "type": "string"
+     }
+    },
+    "required": [
+     "id"
+    ],
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "outputSchema": {
+    "type": "object",
+    "properties": {
+     "meta": {
+      "description": "Billy response metadata (status, paging)",
+      "type": "object",
+      "properties": {
+       "statusCode": {
+        "type": "number"
+       },
+       "success": {
+        "type": "boolean"
+       },
+       "paging": {
+        "description": "Pagination info; use `total`/`pageCount` to decide whether to page further",
+        "type": "object",
+        "properties": {
+         "page": {
+          "type": "number"
+         },
+         "pageSize": {
+          "type": "number"
+         },
+         "pageCount": {
+          "description": "Total number of pages",
+          "type": "number"
+         },
+         "total": {
+          "description": "Total number of matching records",
+          "type": "number"
+         },
+         "nextUrl": {
+          "type": "string"
+         },
+         "lastUrl": {
+          "type": "string"
+         }
+        },
+        "additionalProperties": {}
+       }
+      },
+      "additionalProperties": {}
+     },
+     "product": {
+      "description": "The product returned by Billy",
+      "type": "object",
+      "properties": {},
+      "additionalProperties": {}
+     },
+     "productPrices": {
+      "description": "Related productPrices, present when requested via `include`",
+      "type": "array",
+      "items": {
+       "type": "object",
+       "properties": {},
+       "additionalProperties": {}
+      }
+     }
+    },
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "additionalProperties": false
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "destructiveHint": false,
+    "openWorldHint": true
+   },
+   "execution": {
+    "taskSupport": "forbidden"
+   }
+  },
+  {
+   "name": "billy_get_sales_tax_return",
+   "title": "Get VAT return",
+   "description": "Get a single VAT return (momsangivelse) by ID",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "type": "string",
+      "description": "Sales tax return ID"
+     }
+    },
+    "required": [
+     "id"
+    ],
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "outputSchema": {
+    "type": "object",
+    "properties": {
+     "meta": {
+      "description": "Billy response metadata (status, paging)",
+      "type": "object",
+      "properties": {
+       "statusCode": {
+        "type": "number"
+       },
+       "success": {
+        "type": "boolean"
+       },
+       "paging": {
+        "description": "Pagination info; use `total`/`pageCount` to decide whether to page further",
+        "type": "object",
+        "properties": {
+         "page": {
+          "type": "number"
+         },
+         "pageSize": {
+          "type": "number"
+         },
+         "pageCount": {
+          "description": "Total number of pages",
+          "type": "number"
+         },
+         "total": {
+          "description": "Total number of matching records",
+          "type": "number"
+         },
+         "nextUrl": {
+          "type": "string"
+         },
+         "lastUrl": {
+          "type": "string"
+         }
+        },
+        "additionalProperties": {}
+       }
+      },
+      "additionalProperties": {}
+     },
+     "salesTaxReturn": {
+      "description": "The salesTaxReturn returned by Billy",
+      "type": "object",
+      "properties": {},
+      "additionalProperties": {}
+     }
+    },
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "additionalProperties": false
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "destructiveHint": false,
+    "openWorldHint": true
+   },
+   "execution": {
+    "taskSupport": "forbidden"
+   }
+  },
+  {
+   "name": "billy_list_account_groups",
+   "title": "List account groups",
+   "description": "List chart-of-accounts groups (accountNo, name, type, natureId) for classifying accounts",
+   "inputSchema": {
+    "type": "object",
+    "properties": {},
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "outputSchema": {
+    "type": "object",
+    "properties": {
+     "meta": {
+      "description": "Billy response metadata (status, paging)",
+      "type": "object",
+      "properties": {
+       "statusCode": {
+        "type": "number"
+       },
+       "success": {
+        "type": "boolean"
+       },
+       "paging": {
+        "description": "Pagination info; use `total`/`pageCount` to decide whether to page further",
+        "type": "object",
+        "properties": {
+         "page": {
+          "type": "number"
+         },
+         "pageSize": {
+          "type": "number"
+         },
+         "pageCount": {
+          "description": "Total number of pages",
+          "type": "number"
+         },
+         "total": {
+          "description": "Total number of matching records",
+          "type": "number"
+         },
+         "nextUrl": {
+          "type": "string"
+         },
+         "lastUrl": {
+          "type": "string"
+         }
+        },
+        "additionalProperties": {}
+       }
+      },
+      "additionalProperties": {}
+     },
+     "accountGroups": {
+      "description": "The accountGroups returned by Billy",
+      "type": "array",
+      "items": {
+       "type": "object",
+       "properties": {},
+       "additionalProperties": {}
+      }
+     },
+     "retrieved": {
+      "description": "Number of records actually returned after filtering",
+      "type": "number"
+     },
+     "truncated": {
+      "description": "True if the record cap was hit and results are incomplete — narrow the filters",
+      "type": "boolean"
+     }
+    },
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "additionalProperties": false
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "destructiveHint": false,
+    "openWorldHint": true
+   },
+   "execution": {
+    "taskSupport": "forbidden"
+   }
+  },
+  {
+   "name": "billy_list_accounts",
+   "title": "List accounts",
+   "description": "List the chart of accounts",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "page": {
+      "description": "Page number for pagination",
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+     },
+     "pageSize": {
+      "description": "Number of items per page (max 1000)",
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 1000
+     },
+     "sortProperty": {
+      "description": "Property to sort by",
+      "type": "string"
+     },
+     "sortDirection": {
+      "description": "Sort direction",
+      "type": "string",
+      "enum": [
+       "ASC",
+       "DESC"
+      ]
+     },
+     "isArchived": {
+      "description": "Filter by archived status",
+      "type": "boolean"
+     },
+     "systemRole": {
+      "description": "Filter by system role",
+      "type": "string"
+     }
+    },
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "outputSchema": {
+    "type": "object",
+    "properties": {
+     "meta": {
+      "description": "Billy response metadata (status, paging)",
+      "type": "object",
+      "properties": {
+       "statusCode": {
+        "type": "number"
+       },
+       "success": {
+        "type": "boolean"
+       },
+       "paging": {
+        "description": "Pagination info; use `total`/`pageCount` to decide whether to page further",
+        "type": "object",
+        "properties": {
+         "page": {
+          "type": "number"
+         },
+         "pageSize": {
+          "type": "number"
+         },
+         "pageCount": {
+          "description": "Total number of pages",
+          "type": "number"
+         },
+         "total": {
+          "description": "Total number of matching records",
+          "type": "number"
+         },
+         "nextUrl": {
+          "type": "string"
+         },
+         "lastUrl": {
+          "type": "string"
+         }
+        },
+        "additionalProperties": {}
+       }
+      },
+      "additionalProperties": {}
+     },
+     "accounts": {
+      "description": "The accounts returned by Billy",
+      "type": "array",
+      "items": {
+       "type": "object",
+       "properties": {},
+       "additionalProperties": {}
+      }
+     }
+    },
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "additionalProperties": false
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "destructiveHint": false,
+    "openWorldHint": true
+   },
+   "execution": {
+    "taskSupport": "forbidden"
+   }
+  },
+  {
+   "name": "billy_list_bank_payments",
+   "title": "List bank payments",
+   "description": "List bank payments with optional filtering and pagination",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "page": {
+      "description": "Page number for pagination",
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+     },
+     "pageSize": {
+      "description": "Number of items per page (max 1000)",
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 1000
+     },
+     "sortProperty": {
+      "description": "Property to sort by",
+      "type": "string"
+     },
+     "sortDirection": {
+      "description": "Sort direction",
+      "type": "string",
+      "enum": [
+       "ASC",
+       "DESC"
+      ]
+     },
+     "contactId": {
+      "description": "Filter by contact ID",
+      "type": "string"
+     },
+     "isVoided": {
+      "description": "Filter by voided status",
+      "type": "boolean"
+     }
+    },
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "outputSchema": {
+    "type": "object",
+    "properties": {
+     "meta": {
+      "description": "Billy response metadata (status, paging)",
+      "type": "object",
+      "properties": {
+       "statusCode": {
+        "type": "number"
+       },
+       "success": {
+        "type": "boolean"
+       },
+       "paging": {
+        "description": "Pagination info; use `total`/`pageCount` to decide whether to page further",
+        "type": "object",
+        "properties": {
+         "page": {
+          "type": "number"
+         },
+         "pageSize": {
+          "type": "number"
+         },
+         "pageCount": {
+          "description": "Total number of pages",
+          "type": "number"
+         },
+         "total": {
+          "description": "Total number of matching records",
+          "type": "number"
+         },
+         "nextUrl": {
+          "type": "string"
+         },
+         "lastUrl": {
+          "type": "string"
+         }
+        },
+        "additionalProperties": {}
+       }
+      },
+      "additionalProperties": {}
+     },
+     "bankPayments": {
+      "description": "The bankPayments returned by Billy",
+      "type": "array",
+      "items": {
+       "type": "object",
+       "properties": {},
+       "additionalProperties": {}
+      }
+     }
+    },
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "additionalProperties": false
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "destructiveHint": false,
+    "openWorldHint": true
+   },
+   "execution": {
+    "taskSupport": "forbidden"
+   }
+  },
+  {
+   "name": "billy_list_bills",
+   "title": "List bills",
+   "description": "List bills (vendor invoices) with optional filtering and pagination",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "page": {
+      "description": "Page number for pagination",
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+     },
+     "pageSize": {
+      "description": "Number of items per page (max 1000)",
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 1000
+     },
+     "sortProperty": {
+      "description": "Property to sort by",
+      "type": "string"
+     },
+     "sortDirection": {
+      "description": "Sort direction",
+      "type": "string",
+      "enum": [
+       "ASC",
+       "DESC"
+      ]
+     },
+     "fromDate": {
+      "description": "Start of the entryDate range, inclusive (YYYY-MM-DD)",
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+     },
+     "toDate": {
+      "description": "End of the entryDate range, inclusive (YYYY-MM-DD)",
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+     },
+     "contactId": {
+      "description": "Filter by contact ID",
+      "type": "string"
+     },
+     "state": {
+      "description": "Filter by bill state",
+      "type": "string",
+      "enum": [
+       "draft",
+       "approved"
+      ]
+     },
+     "isPaid": {
+      "description": "Filter by payment status",
+      "type": "boolean"
+     },
+     "include": {
+      "description": "Related resources to include",
+      "type": "string"
+     }
+    },
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "outputSchema": {
+    "type": "object",
+    "properties": {
+     "meta": {
+      "description": "Billy response metadata (status, paging)",
+      "type": "object",
+      "properties": {
+       "statusCode": {
+        "type": "number"
+       },
+       "success": {
+        "type": "boolean"
+       },
+       "paging": {
+        "description": "Pagination info; use `total`/`pageCount` to decide whether to page further",
+        "type": "object",
+        "properties": {
+         "page": {
+          "type": "number"
+         },
+         "pageSize": {
+          "type": "number"
+         },
+         "pageCount": {
+          "description": "Total number of pages",
+          "type": "number"
+         },
+         "total": {
+          "description": "Total number of matching records",
+          "type": "number"
+         },
+         "nextUrl": {
+          "type": "string"
+         },
+         "lastUrl": {
+          "type": "string"
+         }
+        },
+        "additionalProperties": {}
+       }
+      },
+      "additionalProperties": {}
+     },
+     "bills": {
+      "description": "The bills returned by Billy",
+      "type": "array",
+      "items": {
+       "type": "object",
+       "properties": {},
+       "additionalProperties": {}
+      }
+     }
+    },
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "additionalProperties": false
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "destructiveHint": false,
+    "openWorldHint": true
+   },
+   "execution": {
+    "taskSupport": "forbidden"
+   }
+  },
+  {
+   "name": "billy_list_contacts",
+   "title": "List contacts",
+   "description": "List contacts with optional filtering and pagination",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "page": {
+      "description": "Page number for pagination",
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+     },
+     "pageSize": {
+      "description": "Number of items per page (max 1000)",
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 1000
+     },
+     "sortProperty": {
+      "description": "Property to sort by",
+      "type": "string"
+     },
+     "sortDirection": {
+      "description": "Sort direction",
+      "type": "string",
+      "enum": [
+       "ASC",
+       "DESC"
+      ]
+     },
+     "isCustomer": {
+      "description": "Filter by customer status",
+      "type": "boolean"
+     },
+     "isSupplier": {
+      "description": "Filter by supplier status",
+      "type": "boolean"
+     },
+     "include": {
+      "description": "Related resources to include",
+      "type": "string"
+     }
+    },
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "outputSchema": {
+    "type": "object",
+    "properties": {
+     "meta": {
+      "description": "Billy response metadata (status, paging)",
+      "type": "object",
+      "properties": {
+       "statusCode": {
+        "type": "number"
+       },
+       "success": {
+        "type": "boolean"
+       },
+       "paging": {
+        "description": "Pagination info; use `total`/`pageCount` to decide whether to page further",
+        "type": "object",
+        "properties": {
+         "page": {
+          "type": "number"
+         },
+         "pageSize": {
+          "type": "number"
+         },
+         "pageCount": {
+          "description": "Total number of pages",
+          "type": "number"
+         },
+         "total": {
+          "description": "Total number of matching records",
+          "type": "number"
+         },
+         "nextUrl": {
+          "type": "string"
+         },
+         "lastUrl": {
+          "type": "string"
+         }
+        },
+        "additionalProperties": {}
+       }
+      },
+      "additionalProperties": {}
+     },
+     "contacts": {
+      "description": "The contacts returned by Billy",
+      "type": "array",
+      "items": {
+       "type": "object",
+       "properties": {},
+       "additionalProperties": {}
+      }
+     }
+    },
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "additionalProperties": false
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "destructiveHint": false,
+    "openWorldHint": true
+   },
+   "execution": {
+    "taskSupport": "forbidden"
+   }
+  },
+  {
+   "name": "billy_list_daybook_transactions",
+   "title": "List daybook transactions",
+   "description": "List manual journal entries (kassekladde). These bypass the normal invoice/bill flow, so they warrant individual scrutiny in a VAT audit. All pages are fetched and filtered by entryDate.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "fromDate": {
+      "description": "Start of the entryDate range, inclusive (YYYY-MM-DD)",
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+     },
+     "toDate": {
+      "description": "End of the entryDate range, inclusive (YYYY-MM-DD)",
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+     },
+     "state": {
+      "description": "Filter by transaction state",
+      "type": "string",
+      "enum": [
+       "draft",
+       "approved",
+       "voided"
+      ]
+     }
+    },
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "outputSchema": {
+    "type": "object",
+    "properties": {
+     "meta": {
+      "description": "Billy response metadata (status, paging)",
+      "type": "object",
+      "properties": {
+       "statusCode": {
+        "type": "number"
+       },
+       "success": {
+        "type": "boolean"
+       },
+       "paging": {
+        "description": "Pagination info; use `total`/`pageCount` to decide whether to page further",
+        "type": "object",
+        "properties": {
+         "page": {
+          "type": "number"
+         },
+         "pageSize": {
+          "type": "number"
+         },
+         "pageCount": {
+          "description": "Total number of pages",
+          "type": "number"
+         },
+         "total": {
+          "description": "Total number of matching records",
+          "type": "number"
+         },
+         "nextUrl": {
+          "type": "string"
+         },
+         "lastUrl": {
+          "type": "string"
+         }
+        },
+        "additionalProperties": {}
+       }
+      },
+      "additionalProperties": {}
+     },
+     "daybookTransactions": {
+      "description": "The daybookTransactions returned by Billy",
+      "type": "array",
+      "items": {
+       "type": "object",
+       "properties": {},
+       "additionalProperties": {}
+      }
+     },
+     "retrieved": {
+      "description": "Number of records actually returned after filtering",
+      "type": "number"
+     },
+     "truncated": {
+      "description": "True if the record cap was hit and results are incomplete — narrow the filters",
+      "type": "boolean"
+     }
+    },
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "additionalProperties": false
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "destructiveHint": false,
+    "openWorldHint": true
+   },
+   "execution": {
+    "taskSupport": "forbidden"
+   }
+  },
+  {
+   "name": "billy_list_invoices",
+   "title": "List invoices",
+   "description": "List invoices with optional filtering and pagination",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "page": {
+      "description": "Page number for pagination",
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+     },
+     "pageSize": {
+      "description": "Number of items per page (max 1000)",
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 1000
+     },
+     "sortProperty": {
+      "description": "Property to sort by",
+      "type": "string"
+     },
+     "sortDirection": {
+      "description": "Sort direction",
+      "type": "string",
+      "enum": [
+       "ASC",
+       "DESC"
+      ]
+     },
+     "fromDate": {
+      "description": "Start of the entryDate range, inclusive (YYYY-MM-DD)",
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+     },
+     "toDate": {
+      "description": "End of the entryDate range, inclusive (YYYY-MM-DD)",
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+     },
+     "contactId": {
+      "description": "Filter by contact ID",
+      "type": "string"
+     },
+     "state": {
+      "description": "Filter by invoice state",
+      "type": "string",
+      "enum": [
+       "draft",
+       "approved"
+      ]
+     },
+     "isPaid": {
+      "description": "Filter by payment status",
+      "type": "boolean"
+     },
+     "include": {
+      "description": "Related resources to include",
+      "type": "string"
+     }
+    },
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "outputSchema": {
+    "type": "object",
+    "properties": {
+     "meta": {
+      "description": "Billy response metadata (status, paging)",
+      "type": "object",
+      "properties": {
+       "statusCode": {
+        "type": "number"
+       },
+       "success": {
+        "type": "boolean"
+       },
+       "paging": {
+        "description": "Pagination info; use `total`/`pageCount` to decide whether to page further",
+        "type": "object",
+        "properties": {
+         "page": {
+          "type": "number"
+         },
+         "pageSize": {
+          "type": "number"
+         },
+         "pageCount": {
+          "description": "Total number of pages",
+          "type": "number"
+         },
+         "total": {
+          "description": "Total number of matching records",
+          "type": "number"
+         },
+         "nextUrl": {
+          "type": "string"
+         },
+         "lastUrl": {
+          "type": "string"
+         }
+        },
+        "additionalProperties": {}
+       }
+      },
+      "additionalProperties": {}
+     },
+     "invoices": {
+      "description": "The invoices returned by Billy",
+      "type": "array",
+      "items": {
+       "type": "object",
+       "properties": {},
+       "additionalProperties": {}
+      }
+     }
+    },
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "additionalProperties": false
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "destructiveHint": false,
+    "openWorldHint": true
+   },
+   "execution": {
+    "taskSupport": "forbidden"
+   }
+  },
+  {
+   "name": "billy_list_postings",
+   "title": "List ledger postings",
+   "description": "List ledger postings — the double-entry lines where VAT actually lands. Each posting has entryDate, accountId, amount, side (debit/credit), taxRateId and salesTaxReturnId. This is the ground truth for VAT figures, ahead of invoice or bill totals. All matching pages are fetched; check `truncated` before trusting a total.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "fromDate": {
+      "description": "Start of the entryDate range, inclusive (YYYY-MM-DD)",
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+     },
+     "toDate": {
+      "description": "End of the entryDate range, inclusive (YYYY-MM-DD)",
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+     },
+     "accountId": {
+      "description": "Filter by account ID",
+      "type": "string"
+     },
+     "taxRateId": {
+      "description": "Filter by tax rate ID",
+      "type": "string"
+     },
+     "salesTaxReturnId": {
+      "description": "Filter by the VAT return the posting belongs to",
+      "type": "string"
+     }
+    },
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "outputSchema": {
+    "type": "object",
+    "properties": {
+     "meta": {
+      "description": "Billy response metadata (status, paging)",
+      "type": "object",
+      "properties": {
+       "statusCode": {
+        "type": "number"
+       },
+       "success": {
+        "type": "boolean"
+       },
+       "paging": {
+        "description": "Pagination info; use `total`/`pageCount` to decide whether to page further",
+        "type": "object",
+        "properties": {
+         "page": {
+          "type": "number"
+         },
+         "pageSize": {
+          "type": "number"
+         },
+         "pageCount": {
+          "description": "Total number of pages",
+          "type": "number"
+         },
+         "total": {
+          "description": "Total number of matching records",
+          "type": "number"
+         },
+         "nextUrl": {
+          "type": "string"
+         },
+         "lastUrl": {
+          "type": "string"
+         }
+        },
+        "additionalProperties": {}
+       }
+      },
+      "additionalProperties": {}
+     },
+     "postings": {
+      "description": "The postings returned by Billy",
+      "type": "array",
+      "items": {
+       "type": "object",
+       "properties": {},
+       "additionalProperties": {}
+      }
+     },
+     "retrieved": {
+      "description": "Number of records actually returned after filtering",
+      "type": "number"
+     },
+     "truncated": {
+      "description": "True if the record cap was hit and results are incomplete — narrow the filters",
+      "type": "boolean"
+     }
+    },
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "additionalProperties": false
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "destructiveHint": false,
+    "openWorldHint": true
+   },
+   "execution": {
+    "taskSupport": "forbidden"
+   }
+  },
+  {
+   "name": "billy_list_products",
+   "title": "List products",
+   "description": "List products with optional filtering and pagination",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "page": {
+      "description": "Page number for pagination",
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+     },
+     "pageSize": {
+      "description": "Number of items per page (max 1000)",
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 1000
+     },
+     "sortProperty": {
+      "description": "Property to sort by",
+      "type": "string"
+     },
+     "sortDirection": {
+      "description": "Sort direction",
+      "type": "string",
+      "enum": [
+       "ASC",
+       "DESC"
+      ]
+     },
+     "isArchived": {
+      "description": "Filter by archived status",
+      "type": "boolean"
+     },
+     "include": {
+      "description": "Related resources to include",
+      "type": "string"
+     }
+    },
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "outputSchema": {
+    "type": "object",
+    "properties": {
+     "meta": {
+      "description": "Billy response metadata (status, paging)",
+      "type": "object",
+      "properties": {
+       "statusCode": {
+        "type": "number"
+       },
+       "success": {
+        "type": "boolean"
+       },
+       "paging": {
+        "description": "Pagination info; use `total`/`pageCount` to decide whether to page further",
+        "type": "object",
+        "properties": {
+         "page": {
+          "type": "number"
+         },
+         "pageSize": {
+          "type": "number"
+         },
+         "pageCount": {
+          "description": "Total number of pages",
+          "type": "number"
+         },
+         "total": {
+          "description": "Total number of matching records",
+          "type": "number"
+         },
+         "nextUrl": {
+          "type": "string"
+         },
+         "lastUrl": {
+          "type": "string"
+         }
+        },
+        "additionalProperties": {}
+       }
+      },
+      "additionalProperties": {}
+     },
+     "products": {
+      "description": "The products returned by Billy",
+      "type": "array",
+      "items": {
+       "type": "object",
+       "properties": {},
+       "additionalProperties": {}
+      }
+     }
+    },
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "additionalProperties": false
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "destructiveHint": false,
+    "openWorldHint": true
+   },
+   "execution": {
+    "taskSupport": "forbidden"
+   }
+  },
+  {
+   "name": "billy_list_sales_tax_returns",
+   "title": "List VAT returns",
+   "description": "List Billy's own VAT returns (momsangivelser) — the authoritative figures for a period. Each has periodType (quarter/halfYear/year), startDate, endDate, reportDeadline, isSettled and isPaid. Use this as the baseline before recomputing anything. Returns every return, filtered by period overlap.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "fromDate": {
+      "description": "Start of the entryDate range, inclusive (YYYY-MM-DD)",
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+     },
+     "toDate": {
+      "description": "End of the entryDate range, inclusive (YYYY-MM-DD)",
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+     }
+    },
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "outputSchema": {
+    "type": "object",
+    "properties": {
+     "meta": {
+      "description": "Billy response metadata (status, paging)",
+      "type": "object",
+      "properties": {
+       "statusCode": {
+        "type": "number"
+       },
+       "success": {
+        "type": "boolean"
+       },
+       "paging": {
+        "description": "Pagination info; use `total`/`pageCount` to decide whether to page further",
+        "type": "object",
+        "properties": {
+         "page": {
+          "type": "number"
+         },
+         "pageSize": {
+          "type": "number"
+         },
+         "pageCount": {
+          "description": "Total number of pages",
+          "type": "number"
+         },
+         "total": {
+          "description": "Total number of matching records",
+          "type": "number"
+         },
+         "nextUrl": {
+          "type": "string"
+         },
+         "lastUrl": {
+          "type": "string"
+         }
+        },
+        "additionalProperties": {}
+       }
+      },
+      "additionalProperties": {}
+     },
+     "salesTaxReturns": {
+      "description": "The salesTaxReturns returned by Billy",
+      "type": "array",
+      "items": {
+       "type": "object",
+       "properties": {},
+       "additionalProperties": {}
+      }
+     },
+     "retrieved": {
+      "description": "Number of records actually returned after filtering",
+      "type": "number"
+     },
+     "truncated": {
+      "description": "True if the record cap was hit and results are incomplete — narrow the filters",
+      "type": "boolean"
+     }
+    },
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "additionalProperties": false
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "destructiveHint": false,
+    "openWorldHint": true
+   },
+   "execution": {
+    "taskSupport": "forbidden"
+   }
+  },
+  {
+   "name": "billy_list_tax_rates",
+   "title": "List tax rates",
+   "description": "List the configured VAT/tax rates, including rate, name, abbreviation and predefinedTag (e.g. 's_dk_non_eu_goods'), plus whether each applies to sales or purchases. Use this to interpret the taxRateId on postings and invoice lines.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "appliesToSales": {
+      "description": "Only rates usable on sales",
+      "type": "boolean"
+     },
+     "appliesToPurchases": {
+      "description": "Only rates usable on purchases",
+      "type": "boolean"
+     },
+     "isActive": {
+      "description": "Filter by active status",
+      "type": "boolean"
+     }
+    },
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "outputSchema": {
+    "type": "object",
+    "properties": {
+     "meta": {
+      "description": "Billy response metadata (status, paging)",
+      "type": "object",
+      "properties": {
+       "statusCode": {
+        "type": "number"
+       },
+       "success": {
+        "type": "boolean"
+       },
+       "paging": {
+        "description": "Pagination info; use `total`/`pageCount` to decide whether to page further",
+        "type": "object",
+        "properties": {
+         "page": {
+          "type": "number"
+         },
+         "pageSize": {
+          "type": "number"
+         },
+         "pageCount": {
+          "description": "Total number of pages",
+          "type": "number"
+         },
+         "total": {
+          "description": "Total number of matching records",
+          "type": "number"
+         },
+         "nextUrl": {
+          "type": "string"
+         },
+         "lastUrl": {
+          "type": "string"
+         }
+        },
+        "additionalProperties": {}
+       }
+      },
+      "additionalProperties": {}
+     },
+     "taxRates": {
+      "description": "The taxRates returned by Billy",
+      "type": "array",
+      "items": {
+       "type": "object",
+       "properties": {},
+       "additionalProperties": {}
+      }
+     },
+     "retrieved": {
+      "description": "Number of records actually returned after filtering",
+      "type": "number"
+     },
+     "truncated": {
+      "description": "True if the record cap was hit and results are incomplete — narrow the filters",
+      "type": "boolean"
+     }
+    },
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "additionalProperties": false
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "destructiveHint": false,
+    "openWorldHint": true
+   },
+   "execution": {
+    "taskSupport": "forbidden"
+   }
+  },
+  {
+   "name": "billy_update_contact",
+   "title": "Update contact",
+   "description": "Update an existing contact. Only the supplied fields are changed.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "dryRun": {
+      "default": true,
+      "description": "Default true: return the exact request without sending it. Set false only after the dry run was reviewed.",
+      "type": "boolean"
+     },
+     "name": {
+      "description": "Contact name",
+      "type": "string"
+     },
+     "street": {
+      "description": "Street address",
+      "type": "string"
+     },
+     "city": {
+      "description": "City",
+      "type": "string"
+     },
+     "zipcode": {
+      "description": "Zipcode",
+      "type": "string"
+     },
+     "countryId": {
+      "description": "Country ID (e.g. 'DK', 'US')",
+      "type": "string"
+     },
+     "phone": {
+      "description": "Phone number",
+      "type": "string"
+     },
+     "email": {
+      "description": "Email address",
+      "type": "string"
+     },
+     "registrationNo": {
+      "description": "VAT/CVR/Tax ID number",
+      "type": "string"
+     },
+     "isCustomer": {
+      "description": "Whether contact is a customer",
+      "type": "boolean"
+     },
+     "isSupplier": {
+      "description": "Whether contact is a supplier",
+      "type": "boolean"
+     },
+     "paymentTermsDays": {
+      "description": "Payment terms in days",
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+     },
+     "id": {
+      "type": "string",
+      "description": "Contact ID"
+     }
+    },
+    "required": [
+     "id"
+    ],
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "outputSchema": {
+    "type": "object",
+    "properties": {
+     "meta": {
+      "description": "Billy response metadata (status, paging)",
+      "type": "object",
+      "properties": {
+       "statusCode": {
+        "type": "number"
+       },
+       "success": {
+        "type": "boolean"
+       },
+       "paging": {
+        "description": "Pagination info; use `total`/`pageCount` to decide whether to page further",
+        "type": "object",
+        "properties": {
+         "page": {
+          "type": "number"
+         },
+         "pageSize": {
+          "type": "number"
+         },
+         "pageCount": {
+          "description": "Total number of pages",
+          "type": "number"
+         },
+         "total": {
+          "description": "Total number of matching records",
+          "type": "number"
+         },
+         "nextUrl": {
+          "type": "string"
+         },
+         "lastUrl": {
+          "type": "string"
+         }
+        },
+        "additionalProperties": {}
+       }
+      },
+      "additionalProperties": {}
+     },
+     "contacts": {
+      "description": "The contacts returned by Billy",
+      "type": "array",
+      "items": {
+       "type": "object",
+       "properties": {},
+       "additionalProperties": {}
+      }
+     },
+     "dryRun": {
+      "description": "True when nothing was sent to Billy",
+      "type": "boolean"
+     },
+     "request": {
+      "description": "The request that would be sent (dry run only)",
+      "type": "object",
+      "properties": {},
+      "additionalProperties": {}
+     },
+     "preview": {
+      "description": "Human-readable summary of the change, where the tool provides one",
+      "type": "object",
+      "properties": {},
+      "additionalProperties": {}
+     }
+    },
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "additionalProperties": false
+   },
+   "annotations": {
+    "readOnlyHint": false,
+    "destructiveHint": true,
+    "idempotentHint": true,
+    "openWorldHint": true
+   },
+   "execution": {
+    "taskSupport": "forbidden"
+   }
+  },
+  {
+   "name": "billy_update_invoice",
+   "title": "Update invoice",
+   "description": "Update an existing invoice. Only the supplied fields are changed. Approved invoices are generally immutable in Billy.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "dryRun": {
+      "default": true,
+      "description": "Default true: return the exact request without sending it. Set false only after the dry run was reviewed.",
+      "type": "boolean"
+     },
+     "contactId": {
+      "description": "Contact ID",
+      "type": "string"
+     },
+     "entryDate": {
+      "description": "Invoice date (YYYY-MM-DD)",
+      "type": "string"
+     },
+     "currencyId": {
+      "description": "Currency ID (e.g. 'DKK', 'USD')",
+      "type": "string"
+     },
+     "invoiceNo": {
+      "description": "Invoice number (auto-generated by Billy if omitted)",
+      "type": "string"
+     },
+     "paymentTermsDays": {
+      "description": "Payment terms in days (inherited from the contact if omitted)",
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+     },
+     "contactMessage": {
+      "description": "Message to display on invoice",
+      "type": "string"
+     },
+     "state": {
+      "description": "Invoice state",
+      "type": "string",
+      "enum": [
+       "draft",
+       "approved"
+      ]
+     },
+     "lines": {
+      "description": "Invoice lines",
+      "type": "array",
+      "items": {
+       "type": "object",
+       "properties": {
+        "productId": {
+         "type": "string",
+         "description": "Product ID"
+        },
+        "description": {
+         "description": "Line description",
+         "type": "string"
+        },
+        "quantity": {
+         "default": 1,
+         "description": "Quantity",
+         "type": "number"
+        },
+        "unitPrice": {
+         "type": "number",
+         "description": "Unit price"
+        }
+       },
+       "required": [
+        "productId",
+        "unitPrice"
+       ]
+      }
+     },
+     "id": {
+      "type": "string",
+      "description": "Invoice ID"
+     }
+    },
+    "required": [
+     "id"
+    ],
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "outputSchema": {
+    "type": "object",
+    "properties": {
+     "meta": {
+      "description": "Billy response metadata (status, paging)",
+      "type": "object",
+      "properties": {
+       "statusCode": {
+        "type": "number"
+       },
+       "success": {
+        "type": "boolean"
+       },
+       "paging": {
+        "description": "Pagination info; use `total`/`pageCount` to decide whether to page further",
+        "type": "object",
+        "properties": {
+         "page": {
+          "type": "number"
+         },
+         "pageSize": {
+          "type": "number"
+         },
+         "pageCount": {
+          "description": "Total number of pages",
+          "type": "number"
+         },
+         "total": {
+          "description": "Total number of matching records",
+          "type": "number"
+         },
+         "nextUrl": {
+          "type": "string"
+         },
+         "lastUrl": {
+          "type": "string"
+         }
+        },
+        "additionalProperties": {}
+       }
+      },
+      "additionalProperties": {}
+     },
+     "invoices": {
+      "description": "The invoices returned by Billy",
+      "type": "array",
+      "items": {
+       "type": "object",
+       "properties": {},
+       "additionalProperties": {}
+      }
+     },
+     "dryRun": {
+      "description": "True when nothing was sent to Billy",
+      "type": "boolean"
+     },
+     "request": {
+      "description": "The request that would be sent (dry run only)",
+      "type": "object",
+      "properties": {},
+      "additionalProperties": {}
+     },
+     "preview": {
+      "description": "Human-readable summary of the change, where the tool provides one",
+      "type": "object",
+      "properties": {},
+      "additionalProperties": {}
+     }
+    },
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "additionalProperties": false
+   },
+   "annotations": {
+    "readOnlyHint": false,
+    "destructiveHint": true,
+    "idempotentHint": true,
+    "openWorldHint": true
+   },
+   "execution": {
+    "taskSupport": "forbidden"
+   }
+  }
+ ]
+}
