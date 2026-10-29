@@ -25,7 +25,7 @@ function loadDotEnv(): void {
 loadDotEnv();
 
 export const API_BASE_URL = process.env.BILLY_API_BASE_URL ?? "https://api.billysbilling.com/v2";
-export const SERVER_VERSION = "2.1.0";
+export const SERVER_VERSION = "2.0.0";
 
 const TRUTHY = /^(1|true|yes|on)$/i;
 

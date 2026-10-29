@@ -1,6 +1,6 @@
 {
   "name": "billy-mcp-server",
-  "version": "2.1.0",
+  "version": "2.0.0",
   "description": "MCP server for Billy accounting system integration",
   "type": "module",
   "main": "build/index.js",

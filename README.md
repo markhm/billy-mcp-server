@@ -213,12 +213,13 @@ Review that, then repeat the call with `dryRun: false`. Journal entries add a th
 safeguard: they are created as **drafts** by default and only reach the ledger when
 someone approves them in Billy.
 
-> **Upgrading from 2.0:** write tools used to send immediately. They now dry-run unless
-> called with `dryRun: false`.
-
-> **Upgrading from 1.x:** writes used to be on by default, gated by `BILLY_READ_ONLY`.
-> That variable is now ignored (the server warns if it is set). If you rely on the write
-> tools, set `BILLY_ALLOW_WRITES=true`.
+> **Upgrading from 1.x — three breaking changes in 2.0:**
+> 1. **Writes are off by default.** They used to be on, gated by `BILLY_READ_ONLY`. That
+>    variable is now ignored (the server warns if it is set). If you rely on the write
+>    tools, set `BILLY_ALLOW_WRITES=true`.
+> 2. **Write tools dry-run by default.** They used to send immediately. Pass
+>    `dryRun: false` to send.
+> 3. **Node 26 or higher is required** (was 20).
 
 ### Tool metadata
 
