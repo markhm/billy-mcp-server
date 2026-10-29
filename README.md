@@ -14,7 +14,7 @@ A Model Context Protocol (MCP) server for integrating with Billy's accounting sy
 
 ## Prerequisites
 
-- Node.js 20.12 or higher
+- Node.js 26 or higher (`.node-version` and `mise.toml` pin it)
 - Billy account with API access
 - Billy API access token
 

@@ -8,13 +8,13 @@ echo "🚀 Setting up Billy MCP Server..."
 
 # Check Node.js version
 if ! command -v node &> /dev/null; then
-    echo "❌ Node.js is not installed. Please install Node.js 20 or higher."
+    echo "❌ Node.js is not installed. Please install Node.js 26 or higher."
     exit 1
 fi
 
 NODE_VERSION=$(node -v | cut -d'v' -f2 | cut -d'.' -f1)
-if [ "$NODE_VERSION" -lt 20 ]; then
-    echo "❌ Node.js version 20 or higher is required. Current version: $(node -v)"
+if [ "$NODE_VERSION" -lt 26 ]; then
+    echo "❌ Node.js version 26 or higher is required. Current version: $(node -v)"
     exit 1
 fi
 

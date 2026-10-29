@@ -33,11 +33,11 @@
     "zod": "^4.5.4"
   },
   "devDependencies": {
-    "@types/node": "^22.10.0",
+    "@types/node": "^26.6.6",
     "tsx": "^4.23.0",
     "typescript": "^5.9.0"
   },
   "engines": {
-    "node": ">=20.12.0"
+    "node": ">=26.0.0"
   }
 }

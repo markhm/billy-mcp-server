@@ -16,7 +16,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Set `BILLY_ACCESS_TOKEN` (env var or `.env`) before running
 
 ### Environment Setup
-- Requires Node.js 20.12+ (for `process.loadEnvFile`)
+- Requires Node.js 26+ (`engines`, `.node-version`, `mise.toml`). `process.loadEnvFile`
+  is used unguarded, which is safe at that floor
 - Copy `.env.example` to `.env` and set `BILLY_ACCESS_TOKEN`, or pass it via the MCP
   client's `env` block. `loadDotEnv()` reads `.env` from the package root and the cwd;
   real environment variables take precedence over the file.

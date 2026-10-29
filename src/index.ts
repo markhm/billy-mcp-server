@@ -23,7 +23,6 @@ import { fileURLToPath } from "node:url";
  * directory, since MCP clients spawn the server with an arbitrary cwd.
  */
 function loadDotEnv(): void {
-  if (typeof process.loadEnvFile !== "function") return; // Node < 20.12
   const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
   for (const candidate of new Set([resolve(packageRoot, ".env"), resolve(process.cwd(), ".env")])) {
     try {
