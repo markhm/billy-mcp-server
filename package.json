@@ -1,17 +1,24 @@
 {
   "name": "billy-mcp-server",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "MCP server for Billy accounting system integration",
   "type": "module",
   "main": "build/index.js",
   "bin": {
     "billy-mcp-server": "build/index.js"
   },
+  "files": [
+    "build"
+  ],
   "scripts": {
     "build": "tsc",
     "start": "node build/index.js",
     "dev": "tsx src/index.ts",
-    "watch": "tsx watch src/index.ts"
+    "watch": "tsx watch src/index.ts",
+    "typecheck": "tsc --noEmit",
+    "test:connection": "node test-connection.js",
+    "test": "npm run build && node --test \"tests/**/*.test.js\"",
+    "test:live": "BILLY_LIVE_TESTS=1 npm test"
   },
   "keywords": [
     "mcp",
@@ -20,18 +27,19 @@
     "invoicing",
     "api"
   ],
-  "author": "Your Name",
+  "author": "Mark HM",
   "license": "MIT",
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.0.0",
-    "axios": "^1.6.0"
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "axios": "^1.20.0",
+    "zod": "^4.5.4"
   },
   "devDependencies": {
-    "@types/node": "^20.0.0",
-    "tsx": "^4.0.0",
-    "typescript": "^5.0.0"
+    "@types/node": "^26.6.6",
+    "tsx": "^4.23.0",
+    "typescript": "^5.9.0"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=26.0.0"
   }
 }
