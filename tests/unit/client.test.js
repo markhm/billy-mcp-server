@@ -46,6 +46,9 @@ test("describeErrorBody recovers JSON behind a plain-text LOGGER ERROR prefix", 
   const body = 'LOGGER ERROR: something went wrong\n{"errorMessage":"Validation failed.","errorCode":"VALIDATION"}';
   assert.equal(describeErrorBody(body), "Validation failed. (VALIDATION)");
   assert.equal(describeErrorBody("  plain failure text  "), "plain failure text");
+  // Without a "{", nothing is sliced: a body ending in a digit must not collapse to it.
+  assert.equal(describeErrorBody("Service Unavailable 503"), "Service Unavailable 503");
+  assert.equal(describeErrorBody("error 1"), "error 1");
 });
 
 test("a read-only client refuses every non-GET request before it reaches the network", async () => {

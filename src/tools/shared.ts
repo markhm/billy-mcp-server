@@ -35,7 +35,7 @@ export const completeness = {
   truncated: z
     .boolean()
     .optional()
-    .describe("True if the record cap was hit and results are incomplete — narrow the filters"),
+    .describe("True if the 5000-record cap was hit and results are incomplete. Billy narrows postings by date and accountId on the server, so narrowing those helps; daybook transactions, VAT returns, tax rates and account groups are filtered after fetching, so narrowing does not"),
 };
 
 /** Billy entities vary by organisation configuration, so entity bodies stay open.

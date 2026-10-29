@@ -286,8 +286,9 @@ export function describeErrorBody(body: unknown): string | undefined {
   if (body === undefined || body === null) return undefined;
 
   if (typeof body === "string") {
-    const embedded = body.slice(body.indexOf("{"));
-    if (embedded) {
+    const brace = body.indexOf("{");
+    if (brace >= 0) {
+      const embedded = body.slice(brace);
       try {
         return describeErrorBody(JSON.parse(embedded));
       } catch {

@@ -56,8 +56,10 @@ cp .env.example .env
 # then edit .env and set BILLY_ACCESS_TOKEN=...
 ```
 
-The server looks for `.env` next to the package and in the working directory, so this
-works even when your MCP client launches it from somewhere else. `.env` is gitignored.
+The server reads `.env` from the package folder only, so this works wherever your MCP
+client launches it from. It deliberately ignores a `.env` in the working directory: an
+untrusted project could otherwise redirect your token or switch writes on. `.env` is
+gitignored.
 
 **2. Your MCP client's config (the usual choice for day-to-day use)**
 
@@ -322,8 +324,11 @@ npm run test:connection
 
 `npm test` builds first and runs `tests/` with Node's built-in test runner:
 
-- `tests/unit/` covers the client helpers, the read-only and dry-run guards, and
-  journal-entry balancing and account resolution against a stub client.
+- `tests/unit/` covers the client helpers, the read-only and dry-run guards,
+  journal-entry balancing and account resolution against a stub client, and that a
+  `.env` in the working directory is ignored.
+- `tests/handlers.test.js` calls every write tool without `dryRun` against a local stub
+  of the Billy API and fails if any request other than a GET reaches it.
 - `tests/surface.test.js` starts the server over stdio and compares every tool's
   name, schema and annotations, in both modes, with `tests/fixtures/tool-surface.json`.
   After an intentional change, regenerate it with `UPDATE_SNAPSHOT=1 npm test`.

@@ -8,17 +8,17 @@ import { fileURLToPath } from "node:url";
  * exported by hand. Real environment variables always take precedence, so an MCP
  * client's `env` block is never shadowed by a stale .env.
  *
- * Looks next to the package (where .env.example lives) and in the working
- * directory, since MCP clients spawn the server with an arbitrary cwd.
+ * Reads only the .env next to the package (where .env.example lives), never one in
+ * the working directory. MCP clients spawn the server in whatever project is open,
+ * and a .env planted in an untrusted repo could otherwise set BILLY_API_BASE_URL
+ * (sending the token elsewhere) or BILLY_ALLOW_WRITES (turning writes on unseen).
  */
 function loadDotEnv(): void {
   const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-  for (const candidate of new Set([resolve(packageRoot, ".env"), resolve(process.cwd(), ".env")])) {
-    try {
-      process.loadEnvFile(candidate);
-    } catch {
-      // Absent or unreadable; environment variables remain the primary source.
-    }
+  try {
+    process.loadEnvFile(resolve(packageRoot, ".env"));
+  } catch {
+    // Absent or unreadable; environment variables remain the primary source.
   }
 }
 

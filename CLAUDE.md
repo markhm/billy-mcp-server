@@ -12,7 +12,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `npm start` - Run the compiled server from build/index.js
 
 ### Testing
-- `npm test` - Build, then run `tests/**/*.test.js` with `node:test` (no network, no token)
+- `npm test` - Build, then run `tests/**/*.test.js` with `node:test` (no network, no token).
+  `tests/handlers.test.js` calls every write tool without `dryRun` against a local Billy
+  stub and fails on any non-GET; a new write tool must be added to its `CALLS`
 - `npm run test:live` - The same plus `tests/live/`, against the real account in `.env`.
   Every write there is a dry run, and the last test asserts nothing was written
 - `UPDATE_SNAPSHOT=1 npm test` - Regenerate `tests/fixtures/tool-surface.json` after an
@@ -26,8 +28,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Requires Node.js 26+ (`engines`, `.node-version`, `mise.toml`). `process.loadEnvFile`
   is used unguarded, which is safe at that floor
 - Copy `.env.example` to `.env` and set `BILLY_ACCESS_TOKEN`, or pass it via the MCP
-  client's `env` block. `loadDotEnv()` reads `.env` from the package root and the cwd;
-  real environment variables take precedence over the file.
+  client's `env` block. `loadDotEnv()` reads `.env` from the package root only,
+  never the cwd: MCP clients start the server in whatever project is open, and a planted
+  `.env` could redirect the token via `BILLY_API_BASE_URL` or set `BILLY_ALLOW_WRITES`.
+  Real environment variables take precedence over the file.
 - Run `npm install` to install dependencies
 
 ## Architecture
