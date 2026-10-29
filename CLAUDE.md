@@ -137,6 +137,8 @@ src/config.ts          # .env loading, API base URL, version, BILLY_ALLOW_WRITES
 src/client.ts          # BillyClient (all HTTP calls)
 src/tools/shared.ts    # Schema fragments, annotations, dry-run fragments, call()
 src/tools/*.ts         # One module per Billy resource
+tests/                 # node:test: unit/, surface.test.js (+ fixtures/), live/ (opt-in)
+docs/coverage.md       # Billy MCP API coverage: what of Billy's v2 API is exposed
 test-connection.js     # API connection test utility
 .env.example           # Environment variable template
 .node-version          # Node 26 pin (mise.toml pins it for mise too)
