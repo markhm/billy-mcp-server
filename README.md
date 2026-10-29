@@ -381,7 +381,9 @@ All errors are returned with descriptive messages to help with debugging.
 
 ## Supported Billy API Features
 
-This MCP server supports the core Billy API functionality including:
+This MCP server supports the core Billy API functionality including the list below.
+For resource-by-resource coverage of the full API, the gaps, and where the
+implementation and Billy's reference disagree, see [Billy MCP API coverage](docs/coverage.md).
 
 - ✅ Organization management
 - ✅ Contact management (customers/suppliers)
